@@ -6,18 +6,30 @@
   <title>Stakeholder Intelligence - TalentBridge</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro', 'Segoe UI', 'Roboto', sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
+    /* Modern transitions using cubic-bezier */
+    * {
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     .stakeholder-circle {
       cursor: grab;
-      transition: filter 0.2s ease, stroke-width 0.2s ease;
+      transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1), stroke-width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .stakeholder-circle.dragging {
+      transition: none !important; /* No transition during drag - instant movement */
     }
     .stakeholder-circle:hover {
-      filter: brightness(1.2);
+      filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0,0,0,0.1));
       stroke-width: 0.8 !important;
     }
     .stakeholder-circle:active {
@@ -26,25 +38,42 @@
     .stakeholder-circle.selected {
       stroke: #2563eb;
       stroke-width: 0.5;
+      filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.3));
     }
 
     .accordion-header {
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .accordion-header:hover {
-      background-color: #f3f4f6;
+      background-color: #f9fafb;
     }
+    .accordion-header:active {
+      transform: scale(0.995);
+    }
+
+    /* Modern pill badges */
     .contradiction-badge {
-      display: inline-block;
-      padding: 0.25rem 0.5rem;
-      border-radius: 0.25rem;
+      display: inline-flex;
+      align-items: center;
+      padding: 0.375rem 0.75rem;
+      border-radius: 9999px;
       font-size: 0.75rem;
       font-weight: 600;
+      letter-spacing: 0.025em;
     }
-    .severity-critical { background-color: #fee2e2; color: #991b1b; }
-    .severity-high { background-color: #fed7aa; color: #9a3412; }
-    .severity-medium { background-color: #fef3c7; color: #92400e; }
+    .severity-critical { background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .severity-high { background-color: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
+    .severity-medium { background-color: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+
+    /* Card hover effects */
+    .card-hover {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
 
     /* Custom slider styling */
     input[type="range"] {
@@ -99,6 +128,150 @@
         rgb(100, 200, 100),
         rgb(34, 234, 34)
       );
+    }
+
+    /* ===== MOBILE RESPONSIVE STYLES ===== */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .drawer-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .drawer-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 85vw;
+      max-width: 360px;
+      background: white;
+      z-index: 70;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+    }
+    .drawer-panel.open {
+      transform: translateX(0);
+    }
+    .drawer-tab {
+      position: fixed;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 55;
+      width: 28px;
+      height: 56px;
+      background: #2563eb;
+      border-radius: 0 12px 12px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
+    }
+    .drawer-tab svg {
+      width: 14px;
+      height: 14px;
+      fill: white;
+    }
+    .mobile-pill-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px 0;
+    }
+    .pill {
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1.5px solid #e5e7eb;
+      background: white;
+      color: #374151;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .pill:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+    .pill:active {
+      transform: scale(0.96);
+    }
+    .pill.active {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+    }
+    .mobile-bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+      display: flex;
+    }
+    .mobile-bottom-bar button {
+      flex: 1;
+      padding: 14px 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+      background: none;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mobile-bottom-bar button:active {
+      transform: scale(0.96);
+    }
+    .mobile-bottom-bar button.active {
+      color: #2563eb;
+    }
+    .mobile-bottom-bar button.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 32px;
+      height: 3px;
+      background: #2563eb;
+      border-radius: 0 0 3px 3px;
+    }
+
+    /* Hide mobile-only elements on desktop */
+    @media (min-width: 768px) {
+      .drawer-overlay,
+      .drawer-panel,
+      .drawer-tab,
+      .mobile-pill-nav,
+      .mobile-bottom-bar,
+      .mobile-only {
+        display: none !important;
+      }
+    }
+    /* Hide desktop-only elements on mobile */
+    @media (max-width: 767px) {
+      .desktop-only {
+        display: none !important;
+      }
     }
   </style>
 </head>
@@ -592,6 +765,72 @@
     let expandedAccordions = new Set();
     let expandedDetailSections = new Set();
     let draggedStakeholder = null;
+    let drawerOpen = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    function isMobile() { return window.innerWidth < 768; }
+
+    // Re-render on breakpoint crossing
+    let wasMobile = isMobile();
+    window.addEventListener('resize', function() {
+      var nowMobile = isMobile();
+      if (nowMobile !== wasMobile) {
+        wasMobile = nowMobile;
+        drawerOpen = false;
+        render();
+      }
+    });
+
+    // ===== MOBILE RENDER FUNCTIONS =====
+    function renderMobileDrawer() {
+      if (!selectedStakeholder) return '';
+      return '<div class="drawer-overlay' + (drawerOpen ? ' open' : '') + '" onclick="closeDrawer()"></div>' +
+        '<div class="drawer-panel' + (drawerOpen ? ' open' : '') + '">' +
+          '<div class="p-6">' + renderMatrixControls(selectedStakeholder) + '</div>' +
+        '</div>' +
+        '<div class="drawer-tab" onclick="openDrawer()">' +
+          '<svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>' +
+        '</div>';
+    }
+
+    function renderMobilePillNav() {
+      var items = [
+        { key: 'matrix', label: 'Matrix' },
+        { key: 'overview', label: 'Summary' },
+        { key: 'goals', label: 'Goals' },
+        { key: 'needs', label: 'Needs' },
+        { key: 'painPoints', label: 'Pain Points' },
+        { key: 'hiddenAgendas', label: 'Hidden Agendas' },
+        { key: 'keyQuotes', label: 'Quotes' },
+        { key: 'recommendations', label: 'Recs' },
+        { key: 'contradictions', label: 'Contradictions' }
+      ];
+      return '<div class="mobile-pill-nav mobile-only">' +
+        items.map(function(item) {
+          return '<button class="pill' + (currentSection === item.key ? ' active' : '') + '" onclick="setSection(\'' + item.key + '\')">' + item.label + '</button>';
+        }).join('') +
+      '</div>';
+    }
+
+    function renderMobileBottomBar() {
+      return '<div class="mobile-bottom-bar">' +
+        '<button onclick="setView(\'list\')" class="' + (currentView === 'matrix' ? 'active' : '') + '">Stakeholders</button>' +
+        '<button onclick="setView(\'synthesis\')" class="' + (currentView === 'synthesis' ? 'active' : '') + '">Synthesis</button>' +
+      '</div>';
+    }
+
+    function renderMobileStakeholderSelector() {
+      if (!selectedStakeholder) return '';
+      var profile = projectData.stakeholders[selectedStakeholder];
+      return '<div class="mobile-only mb-3">' +
+        '<select onchange="selectStakeholder(this.value)" class="w-full text-base font-semibold text-gray-900 bg-white rounded-lg px-3 py-2 border border-gray-200 outline-none cursor-pointer" style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url(\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>\'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">' +
+          Object.entries(projectData.stakeholders).map(function(entry) {
+            return '<option value="' + entry[0] + '"' + (entry[0] === selectedStakeholder ? ' selected' : '') + '>' + entry[1].name + ' - ' + entry[1].role + '</option>';
+          }).join('') +
+        '</select>' +
+      '</div>';
+    }
 
     // ===== UTILITY FUNCTIONS =====
     function getAttitudeColor(attitude) {
@@ -636,8 +875,12 @@
 
     function getDispositionColor(disposition) {
       const colors = {
-        'Aggressive Ally': '#22c55e', 'Cautious Ally': '#eab308', 'Conditional Ally': '#f59e0b',
-        'Testing Trust': '#3b82f6', 'Flight Risk': '#ef4444', 'Unofficial Ally': '#8b5cf6'
+        'Aggressive Ally': '#10b981',      // Green (strong support)
+        'Cautious Ally': '#fbbf24',        // Yellow (support with reservations)
+        'Conditional Ally': '#f97316',     // Orange (conditional)
+        'Testing Trust': '#3b82f6',        // Blue (neutral/testing)
+        'Flight Risk': '#dc2626',          // Red (danger)
+        'Unofficial Ally': '#8b5cf6'       // Purple (unofficial)
       };
       return colors[disposition] || '#6b7280';
     }
@@ -662,12 +905,17 @@
 
     // ===== TOP BAR =====
     function renderTopBar() {
+      var mobile = isMobile();
+      var px = mobile ? 'px-4 py-3' : 'px-8 py-4';
+      var titleSize = mobile ? 'text-xl' : 'text-3xl';
+      var iconSize = mobile ? 22 : 28;
+      var label = mobile ? 'SI' : 'Stakeholder Intelligence';
       return `
-        <div class="bg-white border-b border-gray-200 sticky top-0 z-50">
-          <div class="px-8 py-4 flex items-center justify-between">
-            <h1 class="text-3xl font-bold text-gray-900">${projectData.projectContext.companyName}</h1>
+        <div class="sticky top-0 z-50" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
+          <div class="${px} flex items-center justify-between">
+            <h1 class="${titleSize} font-bold text-gray-900">${projectData.projectContext.companyName}</h1>
             <div class="flex items-center gap-2">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="12" cy="8" r="3" stroke="#2563eb" stroke-width="2"/>
                 <circle cx="5" cy="18" r="2.5" stroke="#2563eb" stroke-width="1.5"/>
                 <circle cx="19" cy="18" r="2.5" stroke="#2563eb" stroke-width="1.5"/>
@@ -676,7 +924,7 @@
                 <line x1="12" y1="14" x2="5" y2="15.5" stroke="#2563eb" stroke-width="1.5"/>
                 <line x1="12" y1="14" x2="19" y2="15.5" stroke="#2563eb" stroke-width="1.5"/>
               </svg>
-              <span class="text-base font-semibold text-gray-500 tracking-wide">Stakeholder Intelligence</span>
+              <span class="text-base font-semibold text-gray-500 tracking-wide">${label}</span>
             </div>
           </div>
         </div>
@@ -684,12 +932,14 @@
     }
 
     function renderViewButtons() {
-      return '<div class="flex gap-2">' +
-        '<button onclick="setView(\'list\')" class="px-4 py-2 rounded-lg text-sm font-semibold shadow-sm border ' +
-          (currentView === 'matrix' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50') + '">' +
+      var mobile = isMobile();
+      var btnClass = mobile ? 'px-4 py-2.5 text-xs' : 'px-6 py-3 text-sm';
+      return '<div class="flex gap-3">' +
+        '<button onclick="setView(\'list\')" class="' + btnClass + ' rounded-xl font-semibold shadow-sm border transition-all ' +
+          (currentView === 'matrix' ? 'bg-blue-600 text-white border-blue-600 shadow-blue-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300 active:scale-98') + '">' +
           'Stakeholders</button>' +
-        '<button onclick="setView(\'synthesis\')" class="px-4 py-2 rounded-lg text-sm font-semibold shadow-sm border ' +
-          (currentView === 'synthesis' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50') + '">' +
+        '<button onclick="setView(\'synthesis\')" class="' + btnClass + ' rounded-xl font-semibold shadow-sm border transition-all ' +
+          (currentView === 'synthesis' ? 'bg-blue-600 text-white border-blue-600 shadow-blue-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300 active:scale-98') + '">' +
           'Synthesis</button>' +
       '</div>';
     }
@@ -711,9 +961,9 @@
       return items.map(function(item) {
         var isActive = currentSection === item.key;
         var privateTag = item.isPrivate ? ' <span class="text-xs text-gray-400">(Private)</span>' : '';
-        var badgeTag = item.badge ? '<span class="text-xs font-medium bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">' + item.badge + '</span>' : '';
-        var activeClass = isActive ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900';
-        return '<a onclick="setSection(\'' + item.key + '\')" class="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer transition-colors ' + activeClass + '">' +
+        var badgeTag = item.badge ? '<span class="inline-flex items-center text-xs font-semibold bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full border border-orange-200">' + item.badge + '</span>' : '';
+        var activeClass = isActive ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 active:scale-98';
+        return '<a onclick="setSection(\'' + item.key + '\')" class="flex items-center justify-between px-4 py-2.5 rounded-lg text-sm cursor-pointer transition-all ' + activeClass + '">' +
           '<span>' + item.label + privateTag + '</span>' +
           badgeTag + '</a>';
       }).join('');
@@ -722,24 +972,13 @@
     function renderMatrixControls(id) {
       const pos = stakeholderPositions[id];
       const profile = projectData.stakeholders[id];
+      const mobile = isMobile();
 
-      return `
-        <div>
-          <div class="mb-6">
-            <div class="mb-2">
-              <select onchange="selectStakeholder(this.value)" class="text-lg font-bold text-gray-900 bg-white rounded-lg px-3 py-1.5 border border-gray-200 outline-none cursor-pointer pr-8" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; -webkit-appearance: none; -moz-appearance: none; appearance: none;">
-                ${Object.entries(projectData.stakeholders).map(([sid, s]) =>
-                  '<option value="' + sid + '"' + (sid === id ? ' selected' : '') + '>' + s.name + '</option>'
-                ).join('')}
-              </select>
-            </div>
-            <p class="text-sm text-gray-600">${profile.role}</p>
-            <p class="text-xs text-gray-500 mt-1 italic">${profile.disposition}</p>
-            <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p class="text-xs text-blue-800 leading-relaxed">${profile.keyDynamic}</p>
-            </div>
-          </div>
-
+      // On mobile in drawer: show dropdown, role, disposition, key dynamic, and nav only (skip sliders)
+      var slidersHtml = '';
+      var navHtml = '';
+      if (!mobile) {
+        slidersHtml = `
           <div class="space-y-6">
             <div>
               <div class="flex items-center justify-between mb-2">
@@ -782,14 +1021,42 @@
                 <span>Negative</span><span>Neutral</span><span>Positive</span>
               </div>
             </div>
-          </div>
-
+          </div>`;
+        navHtml = `
           <div class="mt-6">
             <h3 class="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wide">Insights</h3>
             <nav class="space-y-1">
               ${renderProfileNav(id)}
             </nav>
+          </div>`;
+      } else {
+        // Mobile drawer: show nav for section switching
+        navHtml = `
+          <div class="mt-4">
+            <h3 class="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wide">Insights</h3>
+            <nav class="space-y-1">
+              ${renderProfileNav(id)}
+            </nav>
+          </div>`;
+      }
+
+      return `
+        <div>
+          <div class="mb-6">
+            <div class="mb-2">
+              <select onchange="selectStakeholder(this.value)" class="text-lg font-bold text-gray-900 bg-white rounded-lg px-3 py-1.5 border border-gray-200 outline-none cursor-pointer pr-8" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; -webkit-appearance: none; -moz-appearance: none; appearance: none;">
+                ${Object.entries(projectData.stakeholders).map(([sid, s]) =>
+                  '<option value="' + sid + '"' + (sid === id ? ' selected' : '') + '>' + s.name + '</option>'
+                ).join('')}
+              </select>
+            </div>
+            <p class="text-sm text-gray-600">${profile.role}</p>
+            <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p class="text-xs text-blue-800 leading-relaxed">${profile.keyDynamic}</p>
+            </div>
           </div>
+          ${slidersHtml}
+          ${navHtml}
         </div>
       `;
     }
@@ -821,12 +1088,12 @@
 
     function renderDetailAccordion(key, title, contentHtml) {
       var isOpen = expandedDetailSections.has(key);
-      return '<div class="border border-gray-200 rounded-lg overflow-hidden">' +
-        '<button onclick="toggleDetailSection(\'' + key + '\')" class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">' +
-          '<span class="text-sm font-semibold text-gray-700">' + title + '</span>' +
+      return '<div class="border border-gray-100 rounded-xl overflow-hidden shadow-sm">' +
+        '<button onclick="toggleDetailSection(\'' + key + '\')" class="accordion-header w-full flex items-center justify-between px-5 py-4 bg-white text-left">' +
+          '<span class="text-sm font-semibold text-gray-800">' + title + '</span>' +
           '<svg class="w-4 h-4 text-gray-400 transform transition-transform ' + (isOpen ? 'rotate-180' : '') + '" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>' +
         '</button>' +
-        (isOpen ? '<div class="px-4 py-3 border-t border-gray-200">' + contentHtml + '</div>' : '') +
+        (isOpen ? '<div class="px-5 py-4 bg-white border-t border-gray-100">' + contentHtml + '</div>' : '') +
       '</div>';
     }
 
@@ -851,7 +1118,7 @@
         });
         if (relevant.length === 0) return '<p class="text-sm text-gray-500">No contradictions found.</p>';
         return relevant.map(function(c) {
-          return '<div class="border border-gray-200 rounded-lg p-4 mb-4">' +
+          return '<div class="border border-gray-100 rounded-xl p-5 mb-4 bg-white shadow-sm">' +
             '<div class="flex items-start justify-between mb-3">' +
               '<h3 class="font-semibold text-gray-900">' + c.theme + '</h3>' +
               '<span class="contradiction-badge severity-' + c.severity.toLowerCase() + '">' + c.severity + '</span>' +
@@ -877,9 +1144,12 @@
       if (sectionKey === 'keyQuotes' && content && content.featured) {
         return '<div class="space-y-5">' +
           '<p class="text-sm text-gray-700 leading-relaxed">' + content.summary + '</p>' +
-          '<div class="space-y-3">' +
+          '<div class="space-y-4">' +
             content.all.map(function(q) {
-              return '<blockquote class="text-sm text-gray-700 italic pl-4 border-l-2 border-blue-400 py-2 bg-blue-50 rounded-r-lg pr-4">&ldquo;' + q + '&rdquo;</blockquote>';
+              return '<blockquote class="relative text-sm text-gray-700 italic pl-5 border-l-3 border-blue-300 py-3 bg-blue-50/50 rounded-r-xl pr-4">' +
+                '<svg class="absolute left-1 top-2.5 w-3 h-3 text-blue-400 opacity-40" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>' +
+                '&ldquo;' + q + '&rdquo;' +
+              '</blockquote>';
             }).join('') +
           '</div>' +
         '</div>';
@@ -909,22 +1179,22 @@
       // Rich object sections (goals, needs, painPoints, hiddenAgendas)
       if (content && content.summary && content.items) {
         var allQuotes = content.quotes || [];
-        return '<div class="space-y-5">' +
+        return '<div class="space-y-6">' +
           '<p class="text-sm text-gray-700 leading-relaxed">' + content.summary + '</p>' +
           (allQuotes.length > 0 ?
-            '<blockquote class="text-sm text-gray-700 italic pl-4 border-l-2 border-blue-400 py-2 bg-blue-50 rounded-r-lg pr-4">&ldquo;' + allQuotes[0] + '&rdquo;</blockquote>' : '') +
-          '<div class="space-y-4">' +
+            '<blockquote class="text-sm text-gray-700 italic pl-4 border-l-3 border-blue-300 py-2.5 bg-blue-50/50 rounded-r-xl pr-4">&ldquo;' + allQuotes[0] + '&rdquo;</blockquote>' : '') +
+          '<div class="space-y-5">' +
             content.items.map(function(item) {
               return '<div>' +
-                '<div class="text-sm font-semibold text-gray-900 mb-1">' + item.title + '</div>' +
+                '<div class="text-sm font-semibold text-gray-900 mb-1.5">' + item.title + '</div>' +
                 '<p class="text-sm text-gray-700 leading-relaxed">' + item.detail + '</p>' +
               '</div>';
             }).join('') +
           '</div>' +
           (allQuotes.length > 1 ?
-            '<div class="space-y-2">' +
+            '<div class="space-y-3">' +
               allQuotes.slice(1).map(function(q) {
-                return '<blockquote class="text-sm text-gray-700 italic pl-4 border-l-2 border-gray-300 py-1">&ldquo;' + q + '&rdquo;</blockquote>';
+                return '<blockquote class="text-sm text-gray-700 italic pl-4 border-l-3 border-gray-300 py-2 bg-gray-50/50 rounded-r-lg pr-3">&ldquo;' + q + '&rdquo;</blockquote>';
               }).join('') +
             '</div>' : '') +
         '</div>';
@@ -942,6 +1212,7 @@
 
     function renderMainPanel() {
       var title, subtitle, contentHtml;
+      var mobile = isMobile();
 
       if (currentSection === 'matrix') {
         title = 'Matrix';
@@ -951,11 +1222,17 @@
         var profile = projectData.stakeholders[selectedStakeholder];
         title = sectionLabels[currentSection] || currentSection;
         subtitle = profile.name + ' &bull; ' + profile.role;
-        contentHtml = '<div class="bg-white rounded-lg border border-gray-200 p-8 shadow-sm overflow-auto" style="max-height: calc(100vh - 280px);">' +
+        var cardPadding = mobile ? 'p-5' : 'p-8';
+        contentHtml = '<div class="bg-white rounded-xl border border-gray-100 ' + cardPadding + ' shadow-sm overflow-auto" style="max-height: calc(100vh - ' + (mobile ? '340px' : '280px') + ');">' +
           renderSectionDetail(selectedStakeholder, currentSection) +
         '</div>';
       } else {
         return '';
+      }
+
+      // On mobile, view functions handle header themselves
+      if (mobile) {
+        return '<div class="max-w-5xl mx-auto">' + contentHtml + '</div>';
       }
 
       return '<div class="max-w-5xl mx-auto">' +
@@ -972,9 +1249,34 @@
 
     function renderMatrixContent() {
       const stakeholders = Object.entries(stakeholderPositions);
+      const mobile = isMobile();
+      const circleR = mobile ? 4 : 2;
+      const circleRSelected = mobile ? 5 : 2.5;
+      const fontSize = mobile ? 3.5 : 2.5;
+      const textOffset = mobile ? 7 : 4.5;
+      const containerPadding = mobile ? 'p-4' : 'p-12';
+      const svgHeight = mobile ? '60vh' : '50vh';
+      const legendGap = mobile ? 'gap-3' : 'gap-6';
+      const legendPx = mobile ? 'px-3 py-2' : 'px-6 py-3';
+      const legendTextSize = mobile ? 'text-xs' : 'text-sm';
+
       return `
-          <div class="bg-white rounded-lg border border-gray-200 p-12 shadow-sm">
-            <svg id="matrixSvg" viewBox="0 0 100 100" class="w-full" style="max-width: 900px; max-height: 50vh; margin: 0 auto; touch-action: none;"
+          <div class="bg-white rounded-lg border border-gray-200 ${containerPadding} shadow-sm">
+            <!-- Top Quadrant Labels -->
+            <div class="mb-4">
+              <div class="grid grid-cols-2 gap-2">
+                <div class="text-center p-2.5 bg-gray-50 rounded-lg border border-gray-200">
+                  <div class="text-xs font-bold text-gray-700 tracking-wide">KEEP SATISFIED</div>
+                  <div class="text-xs text-gray-500 mt-0.5">High Influence, Low Interest</div>
+                </div>
+                <div class="text-center p-2.5 bg-gray-50 rounded-lg border border-gray-200">
+                  <div class="text-xs font-bold text-gray-700 tracking-wide">MANAGE CLOSELY</div>
+                  <div class="text-xs text-gray-500 mt-0.5">High Influence, High Interest</div>
+                </div>
+              </div>
+            </div>
+
+            <svg id="matrixSvg" viewBox="0 0 100 100" class="w-full" style="max-width: 900px; max-height: ${svgHeight}; margin: 0 auto; touch-action: none;"
                  onmousemove="handleMatrixDrag(event)" onmouseup="stopDragging()" onmouseleave="stopDragging()"
                  ontouchmove="handleMatrixDrag(event)" ontouchend="stopDragging()" ontouchcancel="stopDragging()">
               <!-- Quadrant backgrounds -->
@@ -991,12 +1293,6 @@
               <line x1="0" y1="100" x2="100" y2="100" stroke="#374151" stroke-width="0.4"/>
               <line x1="0" y1="0" x2="0" y2="100" stroke="#374151" stroke-width="0.4"/>
 
-              <!-- Quadrant labels -->
-              <text x="25" y="5.5" text-anchor="middle" font-size="2.8" fill="#4B5563" font-weight="700" letter-spacing="0.5">KEEP SATISFIED</text>
-              <text x="75" y="5.5" text-anchor="middle" font-size="2.8" fill="#4B5563" font-weight="700" letter-spacing="0.5">MANAGE CLOSELY</text>
-              <text x="25" y="96" text-anchor="middle" font-size="2.8" fill="#4B5563" font-weight="700" letter-spacing="0.5">MONITOR</text>
-              <text x="75" y="96" text-anchor="middle" font-size="2.8" fill="#4B5563" font-weight="700" letter-spacing="0.5">KEEP INFORMED</text>
-
               <!-- Axis labels -->
               <text x="50" y="105" text-anchor="middle" font-size="3.2" fill="#111827" font-weight="700" letter-spacing="0.3">INTEREST / ENGAGEMENT &rarr;</text>
               <text x="-3" y="50" text-anchor="middle" font-size="3.2" fill="#111827" font-weight="700" letter-spacing="0.3" transform="rotate(-90 -3 50)">&larr; POWER / INFLUENCE</text>
@@ -1008,19 +1304,20 @@
                 const color = getAttitudeColor(pos.attitude);
                 const isSelected = selectedStakeholder === id;
                 const profile = projectData.stakeholders[id];
+                const r = isSelected ? circleRSelected : circleR;
 
                 return `
                   <g class="stakeholder-dot">
                     <circle class="stakeholder-circle ${isSelected ? 'selected' : ''}"
-                            cx="${x}" cy="${y}" r="${isSelected ? 2.5 : 2}"
+                            cx="${x}" cy="${y}" r="${r}"
                             fill="${color}"
                             stroke="${isSelected ? '#2563eb' : 'white'}"
                             stroke-width="${isSelected ? '1' : '0.5'}"
                             data-stakeholder-id="${id}"
                             onmousedown="startDragging(event, '${id}')"
                             ontouchstart="startDragging(event, '${id}')"
-                            style="cursor: grab;"/>
-                    <text x="${x}" y="${y - 4.5}" text-anchor="middle" font-size="2.5"
+                            style="cursor: grab; touch-action: none;"/>
+                    <text x="${x}" y="${y - textOffset}" text-anchor="middle" font-size="${fontSize}"
                           fill="#111827" font-weight="600" font-stretch="condensed"
                           style="pointer-events: none; user-select: none;">
                       ${profile.name.split(' ')[0]}
@@ -1030,20 +1327,34 @@
               }).join('')}
             </svg>
 
+            <!-- Bottom Quadrant Labels -->
+            <div class="mt-4 mb-4">
+              <div class="grid grid-cols-2 gap-2">
+                <div class="text-center p-2.5 bg-gray-50 rounded-lg border border-gray-200">
+                  <div class="text-xs font-bold text-gray-700 tracking-wide">MONITOR</div>
+                  <div class="text-xs text-gray-500 mt-0.5">Low Influence, Low Interest</div>
+                </div>
+                <div class="text-center p-2.5 bg-gray-50 rounded-lg border border-gray-200">
+                  <div class="text-xs font-bold text-gray-700 tracking-wide">KEEP INFORMED</div>
+                  <div class="text-xs text-gray-500 mt-0.5">Low Influence, High Interest</div>
+                </div>
+              </div>
+            </div>
+
             <!-- Legend -->
-            <div class="mt-8 flex items-center justify-center">
-              <div class="bg-gray-50 px-6 py-3 rounded-lg border border-gray-200 flex items-center gap-6">
-                <div class="flex items-center gap-2">
+            <div class="mt-2 flex items-center justify-center">
+              <div class="bg-gray-50 ${legendPx} rounded-lg border border-gray-200 flex items-center ${legendGap}">
+                <div class="flex items-center gap-1.5">
                   <div class="w-3 h-3 rounded-full" style="background: ${getAttitudeColor(80)}"></div>
-                  <span class="text-sm text-gray-700 font-medium">Positive</span>
+                  <span class="${legendTextSize} text-gray-700 font-medium">Positive</span>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5">
                   <div class="w-3 h-3 rounded-full" style="background: ${getAttitudeColor(0)}"></div>
-                  <span class="text-sm text-gray-700 font-medium">Neutral</span>
+                  <span class="${legendTextSize} text-gray-700 font-medium">Neutral</span>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5">
                   <div class="w-3 h-3 rounded-full" style="background: ${getAttitudeColor(-80)}"></div>
-                  <span class="text-sm text-gray-700 font-medium">Negative</span>
+                  <span class="${legendTextSize} text-gray-700 font-medium">Negative</span>
                 </div>
               </div>
             </div>
@@ -1052,6 +1363,25 @@
     }
 
     function renderInfluenceMatrix() {
+      if (isMobile()) {
+        var title = currentSection === 'matrix' ? 'Matrix' : (sectionLabels[currentSection] || currentSection);
+        var subtitle = '';
+        if (currentSection === 'matrix') {
+          subtitle = '<p class="text-xs text-gray-500 mt-1">Drag to position. Color shows attitude.</p>';
+        }
+        return `
+          ${renderMobileDrawer()}
+          <div class="p-4 overflow-auto" style="height: calc(100vh - 49px);">
+            ${renderMobileStakeholderSelector()}
+            ${selectedStakeholder ? renderMobilePillNav() : ''}
+            <div class="mt-2 mb-3">
+              <h1 class="text-xl font-bold text-gray-900 tracking-tight">${title}</h1>
+              ${subtitle}
+            </div>
+            ${renderMainPanel()}
+          </div>
+        `;
+      }
       return `
         <div class="flex" style="height: calc(100vh - 73px); overflow: hidden;">
           <!-- Left: Controls Panel -->
@@ -1080,16 +1410,16 @@
       ];
 
       return `
-        <div class="bg-white rounded-lg border border-gray-200 mb-4" id="stakeholder-${id}">
-          <div class="p-6 border-b border-gray-200">
+        <div class="bg-white rounded-xl border border-gray-100 mb-4 shadow-sm card-hover" id="stakeholder-${id}">
+          <div class="p-6 border-b border-gray-100">
             <div class="flex items-start justify-between">
               <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2">
                   <h3 class="text-lg font-semibold text-gray-900">${stakeholder.name}</h3>
-                  <span class="px-2 py-1 rounded text-xs font-medium" style="background-color: ${getDispositionColor(stakeholder.disposition)}20; color: ${getDispositionColor(stakeholder.disposition)}">${stakeholder.disposition}</span>
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold" style="background-color: ${getDispositionColor(stakeholder.disposition)}15; color: ${getDispositionColor(stakeholder.disposition)}; border: 1.5px solid ${getDispositionColor(stakeholder.disposition)}30;">${stakeholder.disposition}</span>
                 </div>
-                <p class="text-sm text-gray-600 mb-2">${stakeholder.role}</p>
-                <p class="text-sm text-gray-700 italic">${stakeholder.keyDynamic}</p>
+                <p class="text-sm text-gray-600 font-medium mb-2">${stakeholder.role}</p>
+                <p class="text-sm text-gray-700 leading-relaxed italic">${stakeholder.keyDynamic}</p>
               </div>
               <div class="flex gap-4 text-center">
                 <div>
@@ -1179,6 +1509,22 @@
 
     function renderStakeholderList() {
       const stakeholders = Object.entries(projectData.stakeholders);
+      if (isMobile()) {
+        var title = currentSection === 'matrix' ? 'Matrix' : (sectionLabels[currentSection] || currentSection);
+        var subtitle = '';
+        return `
+          ${renderMobileDrawer()}
+          <div class="p-4 overflow-auto" style="height: calc(100vh - 49px);">
+            ${renderMobileStakeholderSelector()}
+            ${selectedStakeholder ? renderMobilePillNav() : ''}
+            <div class="mt-2 mb-3">
+              <h1 class="text-xl font-bold text-gray-900 tracking-tight">${title}</h1>
+              ${subtitle}
+            </div>
+            ${renderMainPanel()}
+          </div>
+        `;
+      }
       return `
         <div class="flex" style="height: calc(100vh - 73px); overflow: hidden;">
           <!-- Left: Controls Panel -->
@@ -1294,6 +1640,17 @@
     }
 
     function renderSynthesisView() {
+      if (isMobile()) {
+        return `
+          <div class="p-4 overflow-auto" style="height: calc(100vh - 49px);">
+            <div class="mt-1 mb-3">
+              <h1 class="text-xl font-bold text-gray-900 tracking-tight">Cross-Stakeholder Synthesis</h1>
+              <p class="text-xs text-gray-500 mt-1">Round ${projectData.metadata.currentRound} &bull; ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+            </div>
+            ${renderSynthesisContent()}
+          </div>
+        `;
+      }
       return `
         <div class="flex" style="height: calc(100vh - 73px); overflow: hidden;">
           <!-- Left: Controls Panel -->
@@ -1321,11 +1678,20 @@
     // ===== MAIN RENDER =====
     function render() {
       const views = { 'matrix': renderInfluenceMatrix, 'list': renderStakeholderList, 'synthesis': renderSynthesisView };
-      document.getElementById('app').innerHTML = renderTopBar() + views[currentView]();
+      if (isMobile()) {
+        document.getElementById('app').innerHTML = views[currentView]() + renderMobileBottomBar();
+      } else {
+        document.getElementById('app').innerHTML = renderTopBar() + views[currentView]();
+      }
     }
 
     // ===== MATRIX SVG UPDATES (no full re-render) =====
     function updateMatrixSVG() {
+      const mobile = isMobile();
+      const baseR = mobile ? 4 : 2;
+      const selectedR = mobile ? 5 : 2.5;
+      const textOff = mobile ? 7 : 4.5;
+
       Object.entries(stakeholderPositions).forEach(([id, pos]) => {
         const x = pos.interest;
         const y = 100 - pos.influence;
@@ -1339,19 +1705,19 @@
           circle.setAttribute('fill', color);
           if (isSelected) {
             circle.classList.add('selected');
-            circle.setAttribute('r', '2.5');
+            circle.setAttribute('r', String(selectedR));
             circle.setAttribute('stroke', '#2563eb');
             circle.setAttribute('stroke-width', '1');
           } else {
             circle.classList.remove('selected');
-            circle.setAttribute('r', '2');
+            circle.setAttribute('r', String(baseR));
             circle.setAttribute('stroke', 'white');
             circle.setAttribute('stroke-width', '0.5');
           }
           const text = circle.parentElement.querySelector('text');
           if (text) {
             text.setAttribute('x', x);
-            text.setAttribute('y', y - 4.5);
+            text.setAttribute('y', y - textOff);
           }
         }
       });
@@ -1383,19 +1749,72 @@
       if (sliders[2]) sliders[2].value = pos.attitude;
     }
 
+    // ===== DRAWER HANDLERS =====
+    window.openDrawer = function() {
+      drawerOpen = true;
+      var overlay = document.querySelector('.drawer-overlay');
+      var panel = document.querySelector('.drawer-panel');
+      if (overlay) overlay.classList.add('open');
+      if (panel) panel.classList.add('open');
+    };
+
+    window.closeDrawer = function() {
+      drawerOpen = false;
+      var overlay = document.querySelector('.drawer-overlay');
+      var panel = document.querySelector('.drawer-panel');
+      if (overlay) overlay.classList.remove('open');
+      if (panel) panel.classList.remove('open');
+    };
+
+    // ===== SWIPE GESTURE DETECTION =====
+    document.addEventListener('touchstart', function(e) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function(e) {
+      if (!isMobile()) return;
+      var touchEndX = e.changedTouches[0].clientX;
+      var touchEndY = e.changedTouches[0].clientY;
+      var deltaX = touchEndX - touchStartX;
+      var deltaY = touchEndY - touchStartY;
+
+      // Must have min 50px horizontal, must exceed vertical
+      if (Math.abs(deltaX) < 50 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+
+      if (deltaX > 0 && touchStartX < 40 && !drawerOpen) {
+        // Swipe right from left edge: open drawer
+        openDrawer();
+      } else if (deltaX < 0 && drawerOpen) {
+        // Swipe left while drawer open: close
+        closeDrawer();
+      }
+    }, { passive: true });
+
     // ===== EVENT HANDLERS =====
     window.setView = function(view) {
+      var controlPanel = document.getElementById('matrixControlPanel');
+      var scrollTop = controlPanel ? controlPanel.scrollTop : 0;
       if (view === 'list') {
         currentView = 'matrix';
       } else {
         currentView = view;
       }
       render();
+      if (!isMobile()) {
+        var newPanel = document.getElementById('matrixControlPanel');
+        if (newPanel) newPanel.scrollTop = scrollTop;
+      }
     };
 
     window.selectStakeholder = function(id) {
       selectedStakeholder = id;
       expandedDetailSections.clear();
+      if (isMobile()) {
+        closeDrawer();
+        render();
+        return;
+      }
       if (currentView === 'matrix') {
         updateMatrixSVG();
         const panel = document.getElementById('matrixControlPanel');
@@ -1419,7 +1838,19 @@
     window.setSection = function(sectionKey) {
       currentSection = sectionKey;
       expandedDetailSections.clear();
-      render();
+      if (isMobile()) {
+        closeDrawer();
+        render();
+        return;
+      }
+      var controlPanel = document.getElementById('matrixControlPanel');
+      if (controlPanel) {
+        var scrollTop = controlPanel.scrollTop;
+        controlPanel.innerHTML = selectedStakeholder ? renderMatrixControls(selectedStakeholder) : renderMatrixNoSelection();
+        controlPanel.scrollTop = scrollTop;
+      }
+      var mainPanel = document.querySelector('.flex-1.p-8.overflow-auto');
+      if (mainPanel) mainPanel.innerHTML = renderMainPanel();
     };
 
     window.toggleAccordion = function(key) {
@@ -1440,16 +1871,44 @@
     window.startDragging = function(event, id) {
       event.preventDefault();
       event.stopPropagation();
+
+      // Immediately set drag state and select stakeholder
       draggedStakeholder = id;
       selectedStakeholder = id;
       currentSection = 'matrix';
+
+      // Add dragging class to disable transitions (instant movement)
+      const svg = document.getElementById('matrixSvg');
+      if (svg) {
+        const circle = svg.querySelector(`circle[data-stakeholder-id="${id}"]`);
+        if (circle) {
+          circle.classList.add('dragging');
+        }
+      }
+
+      // Immediately update UI - no delay on mobile or desktop
       updateMatrixSVG();
-      const panel = document.getElementById('matrixControlPanel');
-      if (panel) panel.innerHTML = renderMatrixControls(id);
+
+      // Update dropdown selector on mobile immediately
+      if (isMobile()) {
+        const selector = document.querySelector('select');
+        if (selector) {
+          selector.value = id;
+        }
+      }
     };
 
     window.stopDragging = function() {
       if (draggedStakeholder) {
+        // Remove dragging class to re-enable transitions
+        const svg = document.getElementById('matrixSvg');
+        if (svg) {
+          const circle = svg.querySelector(`circle[data-stakeholder-id="${draggedStakeholder}"]`);
+          if (circle) {
+            circle.classList.remove('dragging');
+          }
+        }
+
         const circles = document.querySelectorAll('.stakeholder-circle');
         circles.forEach(c => c.style.cursor = 'grab');
         draggedStakeholder = null;
@@ -1458,6 +1917,7 @@
 
     window.handleMatrixDrag = function(event) {
       if (!draggedStakeholder) return;
+
       event.preventDefault();
       event.stopPropagation();
 
@@ -1479,13 +1939,28 @@
       point.y = clientY;
       const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
 
-      const interest = svgPoint.x;
-      const influence = 100 - svgPoint.y;
+      const interest = Math.max(0, Math.min(100, svgPoint.x));
+      const influence = Math.max(0, Math.min(100, 100 - svgPoint.y));
 
-      stakeholderPositions[draggedStakeholder].interest = Math.round(Math.max(0, Math.min(100, interest)));
-      stakeholderPositions[draggedStakeholder].influence = Math.round(Math.max(0, Math.min(100, influence)));
+      stakeholderPositions[draggedStakeholder].interest = Math.round(interest);
+      stakeholderPositions[draggedStakeholder].influence = Math.round(influence);
 
-      updateMatrixSVG();
+      // Directly update circle and text position (no SVG re-render - instant!)
+      const circle = svg.querySelector(`circle[data-stakeholder-id="${draggedStakeholder}"]`);
+      const text = circle ? circle.nextElementSibling : null;
+
+      if (circle) {
+        circle.setAttribute('cx', interest);
+        circle.setAttribute('cy', 100 - influence);
+      }
+      if (text) {
+        const isMobile = window.innerWidth < 768;
+        const textOffset = isMobile ? 7 : 4.5;
+        text.setAttribute('x', interest);
+        text.setAttribute('y', (100 - influence) - textOffset);
+      }
+
+      // Update sliders and labels without full SVG re-render
       updateControlSliders(draggedStakeholder);
       updateControlLabels(draggedStakeholder);
     };
@@ -1505,6 +1980,7 @@
     const navKeys = ['matrix', 'overview', 'goals', 'needs', 'painPoints', 'hiddenAgendas', 'keyQuotes', 'recommendations', 'contradictions'];
 
     document.addEventListener('keydown', function(e) {
+      if (isMobile()) return;
       if ((currentView !== 'matrix' && currentView !== 'synthesis') || !selectedStakeholder) return;
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
 
@@ -1524,7 +2000,11 @@
           if (mainPanel) mainPanel.innerHTML = renderMainPanel();
         }
         var controlPanel = document.getElementById('matrixControlPanel');
-        if (controlPanel) controlPanel.innerHTML = renderMatrixControls(selectedStakeholder);
+        if (controlPanel) {
+          var scrollTop = controlPanel.scrollTop;
+          controlPanel.innerHTML = renderMatrixControls(selectedStakeholder);
+          controlPanel.scrollTop = scrollTop;
+        }
       }
     });
 

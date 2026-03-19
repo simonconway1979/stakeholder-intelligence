@@ -47,13 +47,15 @@ The workflow is simple: after each interview, run `/_add-transcript`. After a ro
 
 ### Front-end: Interactive Political Landscape
 
-The front-end is a single HTML file with no dependencies beyond Tailwind CSS. It visualizes the output of the backend as an interactive tool.
+The front-end is a single HTML file with no dependencies beyond Tailwind CSS. It visualizes the output of the backend as an interactive tool. **Fully responsive and mobile-optimized** with modern glassmorphism effects, instant drag-and-drop (zero lag), and touch-friendly controls.
 
-**Influence/Interest Matrix** - Stakeholders plotted on a 2x2 grid. Drag to reposition. Color indicates attitude (red for adversary through green for strong ally). Click any dot to see their full profile.
+**Influence/Interest Matrix** - Stakeholders plotted on a 2x2 grid. Drag to reposition with instant response on both mobile and desktop. Color indicates attitude (red for adversary through green for strong ally). Click any dot to see their full profile.
 
 **Rich Insight Panels** - For each stakeholder: summary, goals, needs, pain points, hidden agendas, key quotes, recommendations, and contradictions. Each section includes AI-synthesized analysis with supporting quotes from actual interviews.
 
 **Cross-Stakeholder Synthesis** - Themes across the organization (consensus, fractured views, strategic silence), key contradictions with severity ratings and implications, and immediate crises requiring action.
+
+**Responsive Design** - Works seamlessly on mobile, tablet, and desktop. Modern UI with pill badges, enhanced spacing, and smooth micro-interactions. Optimized for touch with larger tap targets and immediate visual feedback.
 
 **Keyboard navigation** - Arrow keys to move through insight sections. Dropdown to switch between stakeholders. The interface is designed to feel like an intelligence briefing, not a dashboard.
 
