@@ -706,7 +706,7 @@
         { key: 'hiddenAgendas', label: 'Hidden Agendas', isPrivate: true },
         { key: 'keyQuotes', label: 'Key Quotes' },
         { key: 'recommendations', label: 'Recommendations' },
-        { key: 'contradictions', label: 'Contradictions', badge: profile.contradictions }
+        { key: 'contradictions', label: 'Contradictions', badge: projectData.contradictions.filter(function(c) { return c.stakeholders.indexOf(profile.name) > -1 || c.stakeholders.indexOf(profile.name.split(' ')[0]) > -1; }).length }
       ];
       return items.map(function(item) {
         var isActive = currentSection === item.key;
