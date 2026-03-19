@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stakeholder Intelligence - TalentBridge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .stakeholder-circle {
+      cursor: grab;
+      transition: filter 0.2s ease, stroke-width 0.2s ease;
+    }
+    .stakeholder-circle:hover {
+      filter: brightness(1.2);
+      stroke-width: 0.8 !important;
+    }
+    .stakeholder-circle:active {
+      cursor: grabbing;
+    }
+    .stakeholder-circle.selected {
+      stroke: #2563eb;
+      stroke-width: 0.5;
+    }
+
+    .accordion-header {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .accordion-header:hover {
+      background-color: #f3f4f6;
+    }
+    .contradiction-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .severity-critical { background-color: #fee2e2; color: #991b1b; }
+    .severity-high { background-color: #fed7aa; color: #9a3412; }
+    .severity-medium { background-color: #fef3c7; color: #92400e; }
+
+    /* Custom slider styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 5px;
+      background: #e5e7eb;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: grab;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      position: relative;
+      z-index: 2;
+    }
+    input[type="range"]::-webkit-slider-thumb:active {
+      cursor: grabbing;
+      background: #2563eb;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: grab;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    input[type="range"]::-moz-range-thumb:active {
+      cursor: grabbing;
+      background: #2563eb;
+    }
+
+    /* Attitude slider gradient */
+    input[type="range"].attitude-slider {
+      background: linear-gradient(to right,
+        rgb(234, 34, 34),
+        rgb(200, 100, 100),
+        rgb(229, 231, 235),
+        rgb(100, 200, 100),
+        rgb(34, 234, 34)
+      );
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div id="app"></div>
+
+  <script>
+    // ===== PROJECT DATA (rich profiles, contradictions, themes) =====
+    const projectData = {
+      "metadata": {
+        "projectName": "Talent Bridge (Example)",
+        "currentRound": 1,
+        "totalStakeholders": 6
+      },
+      "projectContext": {
+        "companyName": "TalentBridge",
+        "yourRole": "Head of Product AI (AI Product Manager)"
+      },
+      "stakeholders": {
+        "marcus-webb-cpo": {
+          "name": "Marcus Webb",
+          "role": "Chief Product Officer",
+          "influence": "High",
+          "interest": "Medium",
+          "disposition": "Cautious Ally",
+          "keyDynamic": "The Cautious Gatekeeper - losing power struggle with Elena, positioning to blame others if AI programme fails",
+          "overview": [
+            "Marcus is your direct manager and the CPO, but don't mistake the reporting line for political protection. He hired you to lead the AI programme, but he's positioned himself to take credit if it succeeds and distance himself if it fails. His repeated emphasis on being 'thoughtful' is carefully constructed cover.",
+            "He's losing a power struggle with Elena Sousa, who has the board's ear through revenue performance. Marcus hasn't delivered a major product win in 18 months, and his authority is eroding. The AI programme represents both his biggest opportunity and his biggest risk.",
+            "Three previous transformation initiatives failed under his watch. This history makes him genuinely cautious, but it also makes him politically paralyzed. He won't champion AI publicly until he's confident it will succeed. In practice, this means he'll support you quietly but won't fight for you when it matters.",
+            "His characterization of other stakeholders is often inaccurate or self-serving. He describes Tom as 'a great partner' when Tom's position is actually conditional and binary. He says Priya is 'still finding her feet' when she's been marginalized for 8 months and is actively interviewing elsewhere. These mischaracterizations suggest either willful blindness or deliberate spin."
+          ],
+          "goals": {
+            "summary": "Marcus wants strategic clarity and time to build proper foundations. His real priority is protecting his reputation if the AI programme fails.",
+            "items": [
+              { "title": "Strategy clarity", "detail": "Wants a well-defined AI strategy before committing resources. Uses 'thoughtful' framing partly as cover for political indecision about which side to back." },
+              { "title": "Thoughtful foundations", "detail": "Emphasizes deliberate planning over speed. This is partly genuine product instinct and partly a delay tactic while he reads the political landscape between Elena and Tom." },
+              { "title": "Protect reputation", "detail": "The underlying driver. If the AI programme fails, Marcus needs to have been the one who 'urged caution' all along. He's positioning for deniability." }
+            ],
+            "quotes": ["We want to be thoughtful about this, not rush into something we'll regret"]
+          },
+          "needs": {
+            "summary": "Marcus needs political cover above all. He won't stick his neck out for the AI programme unless he's confident it will succeed.",
+            "items": [
+              { "title": "Political cover", "detail": "Won't publicly champion AI unless success is near-certain. Needs you to absorb the risk if things go sideways." },
+              { "title": "Time to plan", "detail": "Genuine preference for structured planning, but also uses it as a stalling mechanism. The longer he waits, the more data he has on which faction to support." },
+              { "title": "Validation from engineering", "detail": "Wants Tom's buy-in before committing. Smart politics but means he won't lead from the front." }
+            ],
+            "quotes": ["Tom's a great partner. He'll help manage expectations"]
+          },
+          "painPoints": {
+            "summary": "Marcus is caught in a power struggle with Elena that he's losing. The board wants AI progress, and past transformation failures haunt every decision.",
+            "items": [
+              { "title": "Losing power to Elena", "detail": "Elena's sales results give her increasing board influence. Marcus's product org hasn't delivered a major win in 18 months. The AI push is partly Elena expanding her territory." },
+              { "title": "Board pressure", "detail": "The board wants visible AI progress. Marcus is trapped between Elena's aggressive timeline and Tom's engineering reality." },
+              { "title": "Past failures", "detail": "Three previous transformation initiatives failed under his watch. Each followed the same pattern: big promises, rushed execution, engineering revolt." }
+            ],
+            "quotes": []
+          },
+          "hiddenAgendas": {
+            "summary": "Marcus is positioning you as the person who takes the fall if AI fails. His 'thoughtful' brand provides deniability regardless of outcome.",
+            "items": [
+              { "title": "Let you take the fall", "detail": "If AI fails, Marcus will point to his 'caution' as evidence he knew better. If it succeeds, he claims credit for hiring you. Either way, you absorb the downside risk." },
+              { "title": "'Thoughtful' positioning", "detail": "His emphasis on being 'thoughtful' is a deliberately constructed narrative. It lets him claim foresight no matter the outcome while avoiding making actual decisions." }
+            ],
+            "quotes": ["Priya's still finding her feet"]
+          },
+          "keyQuotes": {
+            "summary": "Marcus communicates in careful, politically safe language. His quotes reveal hedging, deflection, and strategic positioning rather than direct engagement.",
+            "featured": "We want to be thoughtful about this, not rush into something we'll regret",
+            "all": [
+              "We want to be thoughtful about this, not rush into something we'll regret",
+              "Tom's a great partner. He'll help manage expectations",
+              "Priya's still finding her feet"
+            ]
+          },
+          "recommendations": {
+            "summary": "Don't rely on Marcus for political protection. Build your own alliances directly, especially with Tom. Monitor the Marcus-Elena power struggle but don't get caught in the middle.",
+            "immediate": ["Don't rely on Marcus for political protection", "Get alignment directly with Tom"],
+            "ongoing": ["Monitor Marcus-Elena power struggle", "Don't get caught in middle"],
+            "risks": ["May position you as blocker if you challenge Elena's timeline"]
+          },
+          "contradictions": 3
+        },
+        "elena-sousa-vp-sales": {
+          "name": "Elena Sousa",
+          "role": "VP of Sales",
+          "influence": "High",
+          "interest": "High",
+          "disposition": "Aggressive Ally",
+          "keyDynamic": "The Aggressive Accelerator - delivering revenue, driving conference deadline, likely over-promised AI features to customers",
+          "overview": [
+            "Elena is the most politically aggressive stakeholder in the organization. As VP of Sales, she's delivering revenue and using that leverage to push the AI conference deadline that the rest of the organization wasn't consulted on. She sees the AI programme as her vehicle to a COO role within 18 months.",
+            "She's your strongest advocate for speed, but that advocacy comes with strings. She likely made implicit promises to enterprise customers about AI capabilities that no one in product or engineering agreed to. The conference deadline may not be a strategic decision so much as a commitment she can't walk back.",
+            "Her characterization of Tom as 'a bottleneck you'll need to work around' is dangerous advice. Tom's support is conditional on being included from day one. Following Elena's playbook of bypassing engineering will lose you your most critical relationship. She's optimizing for her timeline, not your success.",
+            "If things go well, Elena will be a powerful champion. If the conference deadline is missed, she will publicly position you as the reason. She has no loyalty to new hires who can't deliver on her timeline."
+          ],
+          "goals": {
+            "summary": "Elena is driving toward a conference deadline that will showcase AI features. She wants competitive differentiation now, and this is part of her play for COO within 18 months.",
+            "items": [
+              { "title": "Conference deadline hit", "detail": "The InnovateTech conference is her line in the sand. She likely committed to showing AI features to enterprise prospects. Missing it damages her credibility with the board." },
+              { "title": "Competitive differentiation", "detail": "Competitors are integrating AI into their platforms. Elena sees this as an existential threat to sales pipeline. She needs proof points to close enterprise deals." },
+              { "title": "COO role in 18 months", "detail": "Elena's personal career trajectory depends on demonstrating she can drive company-wide transformation, not just revenue. AI is her vehicle for that promotion." }
+            ],
+            "quotes": ["Our competitors are moving fast on AI and we're behind", "The conference is non-negotiable from a commercial standpoint"]
+          },
+          "needs": {
+            "summary": "Elena needs AI features that help close enterprise deals, and she needs them fast. She wants you to overcome engineering resistance, not accommodate it.",
+            "items": [
+              { "title": "AI features to close deals", "detail": "Enterprise prospects are asking about AI capabilities. Elena needs something tangible to demonstrate, even if it's limited scope." },
+              { "title": "Speed over thoughtfulness", "detail": "Directly opposes Marcus's 'thoughtful foundations' approach. Elena sees speed as a competitive advantage and caution as organizational weakness." },
+              { "title": "You to overcome Tom", "detail": "Expects you to push past engineering concerns. She sees Tom as a bottleneck, not a partner with legitimate concerns." }
+            ],
+            "quotes": ["Tom can be a bit of a bottleneck. You'll need to work around that"]
+          },
+          "painPoints": {
+            "summary": "Elena is frustrated by what she sees as product moving too slowly while competitors outpace them. Engineering bottlenecks are her main obstacle.",
+            "items": [
+              { "title": "Product 'too slow'", "detail": "From Elena's perspective, product development cycles are mismatched with sales reality. Deals are being lost to competitors who can demo AI features." },
+              { "title": "Competitors moving faster", "detail": "This may be partly true and partly manufactured urgency. Need to validate with actual customer data from James." },
+              { "title": "Engineering bottlenecks", "detail": "She frames Tom's legitimate process concerns as obstruction. This is the core tension that will define your first 90 days." }
+            ],
+            "quotes": ["Our competitors are moving fast on AI and we're behind"]
+          },
+          "hiddenAgendas": {
+            "summary": "Elena has likely over-promised AI capabilities to enterprise customers. If you can't deliver to her timeline, she'll position you as the blocker publicly.",
+            "items": [
+              { "title": "Implicit customer promises", "detail": "May have made commitments about AI features in sales conversations that no one in product or engineering agreed to. The conference deadline may be driven by these promises." },
+              { "title": "Will blame you publicly", "detail": "Elena's political instinct is to externalize failure. If the conference deadline is missed, she needs someone to point to. You're the new hire with no political protection." }
+            ],
+            "quotes": ["The conference is non-negotiable from a commercial standpoint"]
+          },
+          "keyQuotes": {
+            "summary": "Elena speaks with urgency and competitive framing. Her language positions speed as non-negotiable and frames anyone who slows her down as an obstacle.",
+            "featured": "Our competitors are moving fast on AI and we're behind",
+            "all": [
+              "Our competitors are moving fast on AI and we're behind",
+              "Tom can be a bit of a bottleneck. You'll need to work around that",
+              "The conference is non-negotiable from a commercial standpoint"
+            ]
+          },
+          "recommendations": {
+            "summary": "Validate what Elena has actually promised to customers before accepting her timeline. Set realistic expectations early and find quick wins that support sales without over-committing.",
+            "immediate": ["Validate what she's actually promised to customers", "Set realistic expectations on timeline"],
+            "ongoing": ["Weekly check-ins to manage expectations", "Find quick wins that support sales"],
+            "risks": ["Will blame you publicly if conference deadline missed"]
+          },
+          "contradictions": 5
+        },
+        "tom-okafor-engineering-lead": {
+          "name": "Tom Okafor",
+          "role": "Engineering Lead, London",
+          "influence": "High",
+          "interest": "High",
+          "disposition": "Conditional Ally",
+          "keyDynamic": "The Conditional Ally - MOST CRITICAL relationship. Binary offer: full support IF involved from day one, open opposition if broken pattern repeats.",
+          "overview": [
+            "Tom is your most critical relationship and possibly the most honest person you'll deal with. As Engineering Lead in London, he has de facto veto power on execution. His offer is binary and explicit: full support if you include engineering from day one, open opposition if you repeat the pattern of making promises without his input.",
+            "This isn't posturing. Three previous transformation initiatives failed because leadership committed to timelines and features without engineering agreement. Tom watched each one follow the same arc: ambitious announcement, unrealistic deadline, engineering concerns ignored, project fails, engineering blamed. He's done with the cycle.",
+            "He discovered the Warsaw prototype two weeks ago and hasn't told London leadership. He's watching to see if you discover it independently, which would signal you're doing real discovery rather than accepting the narrative you've been given. He's also coordinating with Kasia in Warsaw on their joint evaluation of your approach.",
+            "Tom's trust is the gateway to everything. Win him and you get engineering execution, Kasia's Warsaw team, and the political credibility of having the technical organization behind you. Lose him and nothing ships."
+          ],
+          "goals": {
+            "summary": "Tom wants to end the pattern of broken commitments. He'll give full support if you work with engineering from day one, but he'll openly oppose if you repeat the pattern.",
+            "items": [
+              { "title": "End broken commitment pattern", "detail": "Three failed transformation initiatives have taught Tom that promises from leadership rarely translate to proper execution. He's testing whether you're different." },
+              { "title": "Production quality software", "detail": "Cares deeply about engineering standards. Won't accept shortcuts that create tech debt. This is non-negotiable and a feature, not a bug." },
+              { "title": "Protect team from chaos", "detail": "His engineers have been burnt out by previous false starts. He's the shield between organizational dysfunction and his team's morale." }
+            ],
+            "quotes": ["If you work with me from day one, I'll support you fully. If you repeat the pattern, I'll oppose openly"]
+          },
+          "needs": {
+            "summary": "Tom's terms are clear: involvement from the start, no external promises before engineering agrees, and proper process discipline. This is binary, not negotiable.",
+            "items": [
+              { "title": "Involvement from day one", "detail": "Not a preference, a requirement. If you include engineering in planning from the beginning, you get Tom's full weight behind execution." },
+              { "title": "No external promises", "detail": "The root cause of past failures. Sales or leadership committing to timelines or features without engineering input. This is his red line." },
+              { "title": "Process discipline", "detail": "Wants proper scoping, realistic timelines, and honest communication about constraints. Will fight for this openly." }
+            ],
+            "quotes": ["Don't make promises to sales before you've talked to me"]
+          },
+          "painPoints": {
+            "summary": "Tom is dealing with a conference deadline announced without engineering input, sales promises made before scoping, and the scar tissue from three failed initiatives.",
+            "items": [
+              { "title": "Conference deadline without input", "detail": "Engineering was never consulted on the InnovateTech timeline. This is exactly the broken pattern he's trying to end." },
+              { "title": "Sales promises before scoping", "detail": "Elena commits to features in sales conversations. Engineering learns about it after the fact. This cycle has repeated multiple times." },
+              { "title": "Three failed transformations", "detail": "Each previous initiative followed the same arc: ambitious announcement, unrealistic timeline, engineering pushback ignored, project fails, engineering blamed." }
+            ],
+            "quotes": ["The conference thing is exhibit A of the broken pattern here"]
+          },
+          "hiddenAgendas": {
+            "summary": "Tom is actively testing whether you're different from past failed hires. He's coordinating with Kasia in Warsaw on their joint evaluation of your approach.",
+            "items": [
+              { "title": "Testing you", "detail": "Your first interactions with Tom are an evaluation. He's watching whether you consult engineering before making commitments, or whether you side with sales pressure." },
+              { "title": "Coordinating with Kasia", "detail": "Tom and Kasia talk regularly. They're aligned on what good looks like and they're evaluating you together. Win Tom and you likely win Kasia. Lose Tom and you lose both." }
+            ],
+            "quotes": []
+          },
+          "keyQuotes": {
+            "summary": "Tom is direct and unambiguous. His quotes are conditional statements with clear consequences. He tells you exactly what will happen and means it.",
+            "featured": "If you work with me from day one, I'll support you fully. If you repeat the pattern, I'll oppose openly",
+            "all": [
+              "Don't make promises to sales before you've talked to me",
+              "The conference thing is exhibit A of the broken pattern here",
+              "If you work with me from day one, I'll support you fully. If you repeat the pattern, I'll oppose openly"
+            ]
+          },
+          "recommendations": {
+            "summary": "Accept Tom's conditional offer explicitly and never commit to anything externally before engineering agrees. This is your most critical relationship and the terms are non-negotiable.",
+            "immediate": ["Accept his conditional offer explicitly", "Never commit externally before Tom agrees", "Surface Warsaw prototype discovery"],
+            "ongoing": ["Include engineering in ALL planning", "Weekly syncs", "Protect against external pressure"],
+            "risks": ["Will openly oppose if pattern repeats", "Has veto power on execution"]
+          },
+          "contradictions": 7
+        },
+        "priya-nair-data-scientist": {
+          "name": "Priya Nair",
+          "role": "Data Scientist",
+          "influence": "Low",
+          "interest": "High",
+          "disposition": "Flight Risk",
+          "keyDynamic": "The Marginalized Expert - FLIGHT RISK. 8 months, zero shipped, proposals ignored twice, in conversations with other company. 2-3 months to see 'actual different pattern' or she leaves.",
+          "overview": [
+            "Priya is the most urgent situation in your stakeholder landscape. She's a capable data scientist who has been systematically marginalized for 8 months. Nothing has shipped. Her proposals for candidate matching were deprioritized twice. She learned about the conference deadline 'yesterday.' She's actively interviewing elsewhere and has given the organization 2-3 months to show a different pattern.",
+            "Despite this, she's been quietly working with Kasia's Warsaw team on the candidate matching prototype. This unofficial collaboration is producing the only real AI work in the organization. If Priya leaves, the Warsaw prototype loses its technical bridge to London, and the most capable AI practitioner in the company walks out the door.",
+            "The fix is straightforward but time-sensitive. Connect her with James Whitfield for customer data access (something nobody has done in 8 months). Give her real project ownership on candidate matching. Include her in planning conversations. These are table-stakes actions that signal genuine change.",
+            "She's not asking for much. She just needs to see that this time is actually different. Actions, not promises."
+          ],
+          "goals": {
+            "summary": "Priya wants to ship something, anything. After 8 months of having her proposals deprioritized, she needs to see a genuinely different pattern or she's leaving.",
+            "items": [
+              { "title": "Ship anything", "detail": "The bar is incredibly low. Eight months and nothing has shipped. Even a small win would shift her perspective. But it has to be real, not another promise." },
+              { "title": "Strategic partnership not support role", "detail": "She's been treated as a support function, not a strategic contributor. She wants to shape AI direction, not just execute someone else's vision." },
+              { "title": "Candidate matching work valued", "detail": "Pitched this twice, deprioritized both times. Now building it unofficially with Warsaw. This is her proof that leadership doesn't listen." }
+            ],
+            "quotes": ["I need to see an actual different pattern in the next couple of months. Not promises\u2014actions"]
+          },
+          "needs": {
+            "summary": "Priya needs a connection with James for customer data, real project ownership, and to be included in planning conversations she's been excluded from.",
+            "items": [
+              { "title": "Connection with James", "detail": "Has never been introduced to the Head of Customer Success despite her work requiring customer data. This is a basic organizational failure that speaks volumes." },
+              { "title": "Real project ownership", "detail": "Not task assignments, but ownership of a meaningful workstream with authority to make decisions. The candidate matching prototype is what this looks like." },
+              { "title": "Inclusion in planning", "detail": "Learned about the conference deadline 'yesterday'. Being excluded from planning signals she's not valued. Including her is table stakes." }
+            ],
+            "quotes": ["I pitched candidate matching twice. Both times it got deprioritized"]
+          },
+          "painPoints": {
+            "summary": "Eight months of nothing shipped, proposals killed twice, quarterly strategy changes, and total exclusion from the people and decisions that matter.",
+            "items": [
+              { "title": "8 months nothing shipped", "detail": "This is the single most important data point about organizational dysfunction. A capable data scientist has been idle for 8 months. The waste is staggering." },
+              { "title": "Proposals deprioritized twice", "detail": "She brought solutions. Leadership said no, twice, without offering alternatives. This destroyed her trust in the planning process." },
+              { "title": "Quarterly strategy whiplash", "detail": "Direction changes every quarter. Each reset kills in-progress work. Priya has watched her contributions get discarded repeatedly." },
+              { "title": "Never connected with James", "detail": "A data scientist working on customer-facing AI has never been connected with the Head of Customer Success. This isn't an oversight, it's neglect." }
+            ],
+            "quotes": ["I learned about the conference deadline yesterday"]
+          },
+          "hiddenAgendas": {
+            "summary": "Priya is actively interviewing elsewhere and giving the organization 2-3 months to change. She's also working unofficially with Warsaw on the prototype no one in London knows about.",
+            "items": [
+              { "title": "Actively interviewing", "detail": "She's in conversations with at least one other company. Her timeline is 2-3 months to see genuine change. This is not a bluff." },
+              { "title": "Warsaw unofficial work", "detail": "Working with Kasia's team on the candidate matching prototype. This is happening outside official channels because official channels killed her work twice." }
+            ],
+            "quotes": ["I need to see an actual different pattern in the next couple of months. Not promises\u2014actions"]
+          },
+          "keyQuotes": {
+            "summary": "Priya speaks from frustration but with clarity. Her quotes reveal someone who has solutions but has been denied the opportunity to implement them.",
+            "featured": "I need to see an actual different pattern in the next couple of months. Not promises\u2014actions",
+            "all": [
+              "I need to see an actual different pattern in the next couple of months. Not promises\u2014actions",
+              "I pitched candidate matching twice. Both times it got deprioritized",
+              "I learned about the conference deadline yesterday"
+            ]
+          },
+          "recommendations": {
+            "summary": "Connect Priya with James immediately, surface her Warsaw collaboration, and give her real project ownership. You have 2-3 months before she leaves.",
+            "immediate": ["Connect Priya + James (Week 1)", "Surface her Warsaw collaboration", "Include in all AI planning"],
+            "ongoing": ["Give her real project ownership", "Weekly 1:1s", "Protect her work from deprioritization"],
+            "risks": ["Will leave in 2-3 months if pattern doesn't change", "Warsaw AI work dies if she leaves"]
+          },
+          "contradictions": 4
+        },
+        "james-whitfield-head-cs": {
+          "name": "James Whitfield",
+          "role": "Head of Customer Success",
+          "influence": "Medium",
+          "interest": "High",
+          "disposition": "Testing Trust",
+          "keyDynamic": "The Truth-Teller - conducting trust test. Has customer reality that contradicts sales narrative. ChatGPT disclosure in first interview was career-risking test of your trustworthiness.",
+          "overview": [
+            "James is the organizational truth-teller, and his disclosure of the ChatGPT issue in your first meeting was a deliberate, career-risking trust test. His team has been using ChatGPT to draft customer communications for four months without data privacy review. He told you about it to see whether you'd handle it with integrity or use it as ammunition.",
+            "As Head of Customer Success, James has the closest relationship to actual customers. His data directly contradicts Elena's sales narrative. Customers aren't asking for AI. They're asking for basics to work reliably. This insight is potentially the most important strategic data point in your first 90 days, and nobody in leadership has asked for it.",
+            "James has been systematically excluded from product decisions despite his team absorbing the consequences of every rushed launch and broken feature. He's not bitter, but he's deeply frustrated. He offered to connect you with three customers directly. Taking that offer signals you value customer reality over internal narratives.",
+            "Handle the ChatGPT issue well and you earn the most honest voice in the organization. Mishandle it and you'll never be trusted with sensitive information again."
+          ],
+          "goals": {
+            "summary": "James wants customer success to have a seat at the product table. He's tired of his team absorbing the consequences of decisions made without their input.",
+            "items": [
+              { "title": "Included in product decisions", "detail": "Has been systematically excluded from product planning despite his team being closest to customers. This marginalization drives deep frustration." },
+              { "title": "Fix broken workflows", "detail": "His team deals with product failures daily. Basic reliability issues are unresolved while leadership chases AI. He sees the disconnect clearly." },
+              { "title": "Protect team from product failures", "detail": "Every rushed launch lands on his team. They handle the customer fallout. He's the organizational shock absorber and he's done with it." }
+            ],
+            "quotes": ["Customers aren't asking for AI. They're asking for the basics to work reliably"]
+          },
+          "needs": {
+            "summary": "James needs someone to actually listen to customer reality, handle the ChatGPT privacy issue he disclosed without blame, and connect him with Priya.",
+            "items": [
+              { "title": "Someone to listen", "detail": "He has customer data that contradicts the sales narrative. Nobody in leadership has asked for it. Your willingness to listen is the test." },
+              { "title": "ChatGPT issue handled well", "detail": "His team has been using ChatGPT for customer communications for 4 months without data privacy review. He told you this in your first meeting. That's a trust test." },
+              { "title": "Connection with Priya", "detail": "He knows Priya exists but they've never worked together. Connecting them unlocks customer data plus AI capability. It's an obvious win nobody has made happen." }
+            ],
+            "quotes": ["We've been using ChatGPT to draft customer communications for about four months. Nobody ever reviewed the data privacy implications"]
+          },
+          "painPoints": {
+            "summary": "James is never in the room when decisions are made, his team absorbs the fallout from product failures, and the AI programme is ignoring actual customer needs.",
+            "items": [
+              { "title": "Never in the room", "detail": "Product decisions are made between Marcus, Elena, and Tom. Customer Success is informed after the fact. James has direct customer insight that never reaches decision-makers." },
+              { "title": "Team absorbs consequences", "detail": "When features ship broken or incomplete, Customer Success handles the customer anger. They've become the buffer between bad product decisions and customer churn." },
+              { "title": "AI ignoring real needs", "detail": "Customers aren't asking for AI. They want reliability, basic workflow fixes, and consistent service. The AI programme is solving a problem customers don't have." }
+            ],
+            "quotes": ["Sales narrative is... optimistic. Reality is more complicated"]
+          },
+          "hiddenAgendas": {
+            "summary": "The ChatGPT disclosure in your first meeting was a deliberate trust test. James also knows that customers aren't actually asking for AI, which contradicts Elena's entire narrative.",
+            "items": [
+              { "title": "ChatGPT trust test", "detail": "Telling a new hire about an unreported privacy issue in your first conversation is a calculated risk. If you handle it well, you earn James's loyalty. If you use it against his team, he knows you can't be trusted." },
+              { "title": "Customers not asking for AI", "detail": "James has the data showing customer requests are about reliability, not AI features. This directly undermines the strategic rationale for the conference deadline and Elena's urgency." }
+            ],
+            "quotes": ["Customers aren't asking for AI. They're asking for the basics to work reliably"]
+          },
+          "keyQuotes": {
+            "summary": "James is the truth-teller. His quotes reveal customer reality that contradicts the sales narrative, delivered with measured diplomacy.",
+            "featured": "Customers aren't asking for AI. They're asking for the basics to work reliably",
+            "all": [
+              "We've been using ChatGPT to draft customer communications for about four months. Nobody ever reviewed the data privacy implications",
+              "Customers aren't asking for AI. They're asking for the basics to work reliably",
+              "Sales narrative is... optimistic. Reality is more complicated"
+            ]
+          },
+          "recommendations": {
+            "summary": "Handle the ChatGPT disclosure without blame, take up his offer to talk to 3 customers, and connect him with Priya. Getting this right earns you the most honest voice in the organization.",
+            "immediate": ["Handle ChatGPT issue without blame", "Talk to 3 customers (his offer)", "Connect with Priya"],
+            "ongoing": ["Include CS in product planning", "Weekly customer insights", "Validate sales claims"],
+            "risks": ["If you mishandle ChatGPT = never trusted again", "Has customer data that contradicts sales story"]
+          },
+          "contradictions": 6
+        },
+        "kasia-nowak-warsaw-engineering-lead": {
+          "name": "Kasia Nowak",
+          "role": "Engineering Lead, Warsaw",
+          "influence": "Medium",
+          "interest": "High",
+          "disposition": "Unofficial Ally",
+          "keyDynamic": "The Unofficial Builder - Warsaw team built working AI candidate matching prototype over 3 months unofficially. London leadership doesn't know. 'Please mean it' if you commit to Warsaw's work.",
+          "overview": [
+            "Kasia leads the Warsaw engineering team and holds the single biggest strategic opportunity in your first 90 days: a working AI candidate matching prototype that London leadership doesn't know about. Her team built it over three months, unofficially, because going through official channels meant London could kill it like they killed the last project.",
+            "That previous project was a 6-month effort cancelled via email. Not a conversation, not a meeting. An email. Two engineers left as a direct consequence. The remaining team is loyal to Kasia but deeply wary of London leadership. They built the prototype on faith, and Kasia needs that faith rewarded.",
+            "She's coordinating with Tom on evaluating your approach. Win Tom and you likely win Kasia. Her terms are simple but absolute: if you commit to Warsaw's work, mean it. Proper resourcing means 2 full-time engineers and Priya's dedicated time. The prototype could be production-ready in 8-10 weeks with this support.",
+            "The prototype changes the conference timeline from impossible (building from scratch) to feasible (hardening existing work). How you surface it to Marcus and Elena will define your political credibility in the organization."
+          ],
+          "goals": {
+            "summary": "Kasia wants Warsaw's work recognized and properly resourced. Her team built a working AI prototype in secret because official channels kept killing their projects.",
+            "items": [
+              { "title": "Warsaw work recognized", "detail": "Three months of unofficial development on candidate matching. A working prototype exists. She wants it surfaced, funded, and taken seriously." },
+              { "title": "Protection from London dysfunction", "detail": "Warsaw has been collateral damage in London's organizational chaos. Projects cancelled via email, engineers leaving. She needs stability." },
+              { "title": "Team investment respected", "detail": "Two engineers left after their last project was cancelled. The remaining team built the prototype on faith. Kasia needs that faith rewarded." }
+            ],
+            "quotes": ["We could demo it today. Production-ready in 8-10 weeks with proper resourcing"]
+          },
+          "needs": {
+            "summary": "Kasia needs a real commitment if you engage Warsaw. No half-measures. Proper resourcing means 2 FTE and Priya's dedicated time.",
+            "items": [
+              { "title": "Real commitment", "detail": "If you say you'll support Warsaw's work, you need to mean it. A previous project was cancelled by email after 6 months. She won't invest again without genuine backing." },
+              { "title": "Proper resourcing", "detail": "The prototype needs 2 full-time engineers and Priya's dedicated time to reach production in 8-10 weeks. Anything less and it stays a side project." },
+              { "title": "No repeat of cancellation", "detail": "The emotional and professional cost of the last cancellation was severe. Two engineers quit. Kasia took it personally. Another cancellation would permanently damage trust." }
+            ],
+            "quotes": ["If you commit to something with my team, please mean it"]
+          },
+          "painPoints": {
+            "summary": "Warsaw has been treated as an expendable satellite office. A 6-month project was cancelled via email, two engineers left, and now they build in secret to avoid the pain of official channels.",
+            "items": [
+              { "title": "6-month project cancelled via email", "detail": "Not a conversation. Not a meeting. An email. This is how London treated Warsaw's work. The disrespect drove lasting organizational damage." },
+              { "title": "2 engineers left", "detail": "Direct consequence of the cancellation. Talent that's hard to replace in Warsaw's market. The remaining team is loyal to Kasia but wary of London." },
+              { "title": "Builds unofficially to avoid risk", "detail": "The prototype exists because Warsaw stopped asking permission. Going through official channels means London can kill projects again. Secrecy is a survival strategy." }
+            ],
+            "quotes": []
+          },
+          "hiddenAgendas": {
+            "summary": "Kasia is coordinating with Tom on evaluating you, and Warsaw has a working prototype that London leadership doesn't know about. This is your biggest strategic opportunity.",
+            "items": [
+              { "title": "Coordinating with Tom", "detail": "Tom and Kasia talk regularly. They're aligned on what good looks like and they're evaluating you together. Win Tom and you likely win Kasia. Lose Tom and you lose both." },
+              { "title": "Working prototype hidden", "detail": "A functioning AI candidate matching system exists. Marcus and Elena don't know. This changes the conference timeline from impossible to feasible. How you surface it defines your political savvy." }
+            ],
+            "quotes": ["Priya understands the technical approach better than anyone in London. She is very good", "We could demo it today. Production-ready in 8-10 weeks with proper resourcing"]
+          },
+          "keyQuotes": {
+            "summary": "Kasia speaks with quiet intensity. Her quotes carry the weight of past disappointment and conditional hope. Every statement is a test of whether you'll follow through.",
+            "featured": "If you commit to something with my team, please mean it",
+            "all": [
+              "If you commit to something with my team, please mean it",
+              "Priya understands the technical approach better than anyone in London. She is very good",
+              "We could demo it today. Production-ready in 8-10 weeks with proper resourcing"
+            ]
+          },
+          "recommendations": {
+            "summary": "Either commit fully to Warsaw or don't engage at all. Half-measures will permanently damage trust. Surface the prototype to leadership with Tom's support.",
+            "immediate": ["Surface prototype to Marcus/Elena with Tom's support", "Get Priya protected time", "Commit to Warsaw or don't engage"],
+            "ongoing": ["Protect Warsaw from London chaos", "Regular communication", "Resource properly"],
+            "risks": ["Won't invest again if commitment isn't real", "Prototype dies if not resourced"]
+          },
+          "contradictions": 2
+        }
+      },
+      "contradictions": [
+        {
+          "id": 1, "severity": "High", "theme": "Conference Deadline",
+          "stakeholders": ["Elena Sousa", "Marcus Webb", "Tom Okafor", "Priya Nair", "James Whitfield"],
+          "positions": { "Elena": "Non-negotiable commercial deadline", "Marcus": "Strategic silence (didn't mention it)", "Tom": "Engineering never agreed, 14 weeks impossible", "Priya": "Learned about it 'yesterday', excluded from planning", "James": "Will harm customers if rushed" },
+          "quotes": { "Elena": "The conference is non-negotiable from a commercial standpoint", "Tom": "The conference thing is exhibit A of the broken pattern here", "Priya": "I learned about the conference deadline yesterday" },
+          "implications": "Major organizational dysfunction. Deadline committed without engineering agreement. Timeline genuinely impossible from scratch BUT feasible with Warsaw prototype. Core test of your political navigation.",
+          "status": "Active"
+        },
+        {
+          "id": 2, "severity": "Critical", "theme": "Tom's Characterization",
+          "stakeholders": ["Marcus Webb", "Elena Sousa", "Tom Okafor"],
+          "positions": { "Marcus": "Tom's a great partner who'll help manage expectations (ally)", "Elena": "Tom can be a bit of a bottleneck, work around him (obstacle)", "Tom": "I'll support fully IF involved from day one, oppose if pattern repeats (conditional)" },
+          "quotes": { "Marcus": "Tom's a great partner. He'll help manage expectations", "Elena": "Tom can be a bit of a bottleneck. You'll need to work around that", "Tom": "If you work with me from day one, I'll support you fully. If you repeat the pattern, I'll oppose openly" },
+          "implications": "Both Marcus and Elena misrepresented Tom's position. Tom's offer is binary and conditional on YOUR behavior. Don't work around him (Elena's advice) or expect him to manage expectations (Marcus's framing). Accept his terms or lose engineering support.",
+          "status": "Active"
+        },
+        {
+          "id": 3, "severity": "Critical", "theme": "Priya's Situation",
+          "stakeholders": ["Marcus Webb", "Tom Okafor", "Priya Nair"],
+          "positions": { "Marcus": "Still finding her feet (implies early/uncertain)", "Tom": "She's been marginalized and she shouldn't have been (explicit)", "Priya": "8 months, proposals deprioritized twice, actively interviewing" },
+          "quotes": { "Marcus": "Priya's still finding her feet", "Tom": "Priya's been marginalized, and she shouldn't have been", "Priya": "I need to see an actual different pattern in the next couple of months" },
+          "implications": "Marcus's framing is inaccurate/spin. Priya is competent but frustrated, not uncertain. Flight risk in 2-3 months. If she leaves, Warsaw AI work dies. Immediate action required.",
+          "status": "Active - URGENT"
+        },
+        {
+          "id": 4, "severity": "High", "theme": "Customer Reality vs Sales Narrative",
+          "stakeholders": ["Elena Sousa", "James Whitfield"],
+          "positions": { "Elena": "AI story opening enterprise deals, competitive necessity", "James": "Customers not asking for AI, want basics to work reliably" },
+          "quotes": { "Elena": "Our competitors are moving fast on AI and we're behind", "James": "Customers aren't asking for AI. They're asking for the basics to work reliably" },
+          "implications": "Sales narrative may not reflect customer demand. AI programme could be solving wrong problem. James has customer data that contradicts Elena's urgency. Need to talk to actual customers to validate.",
+          "status": "Active"
+        },
+        {
+          "id": 5, "severity": "Medium", "theme": "Warsaw Prototype Existence",
+          "stakeholders": ["Marcus Webb", "Elena Sousa", "Tom Okafor", "Priya Nair", "Kasia Nowak"],
+          "positions": { "Marcus": "Doesn't know it exists", "Elena": "Doesn't know it exists", "Tom": "Discovered it 2 weeks ago, hasn't told London leadership", "Priya": "Working on it for months", "Kasia": "Production-ready in 8-10 weeks, could demo today" },
+          "quotes": { "Kasia": "We could demo it today. Production-ready in 8-10 weeks with proper resourcing", "Priya": "I've been working informally with the Warsaw engineers" },
+          "implications": "Working AI prototype exists that changes conference timeline from impossible to feasible. London leadership gap is massive. Tom is testing whether you discover this. Surfacing it could be your first major value-add.",
+          "status": "Active - STRATEGIC OPPORTUNITY"
+        }
+      ],
+      "themes": {
+        "consensus": [
+          { "theme": "AI programme is strategically important", "note": "Performed consensus - everyone agrees on label, disagree on substance", "genuine": false },
+          { "theme": "Gap between expectations and reality", "note": "Everyone sees it, disagree on which side is the problem", "genuine": true }
+        ],
+        "fractured": [
+          { "theme": "Speed vs thoughtfulness", "positions": ["Marcus: brake", "Elena: accelerator", "Tom: conditional", "Priya: desperate", "James: customer-focused"] },
+          { "theme": "Conference deadline", "positions": ["Elena: driving", "Marcus: silent", "Tom: opposing", "Priya: excluded", "James: predicting harm"] },
+          { "theme": "Root cause of dysfunction", "positions": ["Elena: engineering too slow", "Marcus: board unrealistic", "Tom: sales promises before scoping"] }
+        ],
+        "silence": [
+          "Who made conference commitment", "What happened to previous failed hires", "Actual product technical debt",
+          "Marcus-Elena relationship history", "AI programme origin story", "What Priya's been working on for 8 months", "Customer data James has"
+        ]
+      },
+      "crises": [
+        { "name": "ChatGPT Data Privacy Violation", "severity": "HIGH", "timeline": "Already happening, duration unknown", "description": "CS team using ChatGPT for customer communications for 4 months. No privacy review. GDPR/contract exposure.", "action": "Thank James, no blame, audit and remediate immediately. This is trust test." },
+        { "name": "Priya Leaving", "severity": "HIGH", "timeline": "2-3 months", "description": "Data scientist actively interviewing. Needs to see different pattern through actions or leaves. Warsaw AI work dies with her.", "action": "Connect with James (Week 1), surface Warsaw work, give real project ownership." }
+      ]
+    };
+
+    // ===== INTERACTIVE MATRIX DATA (numeric positions) =====
+    const initialPositions = {
+      "marcus-webb-cpo":                    { influence: 85, interest: 50, attitude: 40 },
+      "elena-sousa-vp-sales":               { influence: 85, interest: 85, attitude: 80 },
+      "tom-okafor-engineering-lead":         { influence: 85, interest: 85, attitude: 20 },
+      "priya-nair-data-scientist":           { influence: 15, interest: 85, attitude: -60 },
+      "james-whitfield-head-cs":             { influence: 50, interest: 85, attitude: 0 },
+      "kasia-nowak-warsaw-engineering-lead":  { influence: 50, interest: 85, attitude: 60 }
+    };
+
+    let stakeholderPositions = JSON.parse(JSON.stringify(initialPositions));
+
+    // ===== STATE =====
+    let currentView = 'matrix';
+    let selectedStakeholder = null;
+    let currentSection = 'matrix'; // 'matrix' or a section key like 'goals', 'needs', etc.
+    let expandedAccordions = new Set();
+    let expandedDetailSections = new Set();
+    let draggedStakeholder = null;
+
+    // ===== UTILITY FUNCTIONS =====
+    function getAttitudeColor(attitude) {
+      if (attitude > 0) {
+        const ratio = attitude / 100;
+        const r = Math.round(229 + (34 - 229) * ratio);
+        const g = Math.round(231 + (234 - 231) * ratio);
+        const b = Math.round(235 + (34 - 235) * ratio);
+        return `rgb(${r}, ${g}, ${b})`;
+      } else if (attitude < 0) {
+        const ratio = Math.abs(attitude) / 100;
+        const r = Math.round(229 + (234 - 229) * ratio);
+        const g = Math.round(231 + (34 - 231) * ratio);
+        const b = Math.round(235 + (34 - 235) * ratio);
+        return `rgb(${r}, ${g}, ${b})`;
+      } else {
+        return 'rgb(229, 231, 235)';
+      }
+    }
+
+    function getAttitudeLabel(attitude) {
+      if (attitude >= 70) return "Very Positive";
+      if (attitude >= 40) return "Positive";
+      if (attitude >= 10) return "Somewhat Positive";
+      if (attitude >= -10) return "Neutral";
+      if (attitude >= -40) return "Somewhat Negative";
+      if (attitude >= -70) return "Negative";
+      return "Very Negative";
+    }
+
+    function getInfluenceLabel(influence) {
+      if (influence >= 70) return "High";
+      if (influence >= 40) return "Medium";
+      return "Low";
+    }
+
+    function getInterestLabel(interest) {
+      if (interest >= 70) return "High";
+      if (interest >= 40) return "Medium";
+      return "Low";
+    }
+
+    function getDispositionColor(disposition) {
+      const colors = {
+        'Aggressive Ally': '#22c55e', 'Cautious Ally': '#eab308', 'Conditional Ally': '#f59e0b',
+        'Testing Trust': '#3b82f6', 'Flight Risk': '#ef4444', 'Unofficial Ally': '#8b5cf6'
+      };
+      return colors[disposition] || '#6b7280';
+    }
+
+    function getStrategicContext(id) {
+      const pos = stakeholderPositions[id];
+      const profile = projectData.stakeholders[id];
+      const influence = getInfluenceLabel(pos.influence);
+      const interest = getInterestLabel(pos.interest);
+      const attitude = getAttitudeLabel(pos.attitude);
+
+      if (influence === "High" && interest === "High") {
+        return `<strong>MANAGE CLOSELY</strong>: High power and high engagement. ${attitude.includes("Negative") ? "Negative attitude = major risk. Prioritize relationship repair." : attitude.includes("Positive") ? "Positive attitude = key ally. Maintain regular engagement." : "Neutral attitude = could swing either way. Build trust actively."}`;
+      } else if (influence === "High") {
+        return `<strong>KEEP SATISFIED</strong>: High power but moderate engagement. ${attitude.includes("Negative") ? "Risk of becoming active opponent if dissatisfied." : "Keep informed but don't overwhelm."}`;
+      } else if (interest === "High") {
+        return `<strong>KEEP INFORMED</strong>: Limited power but highly engaged. ${attitude.includes("Positive") ? "Could be advocate/champion if empowered." : "May become vocal critic if ignored."}`;
+      } else {
+        return `<strong>MONITOR</strong>: Lower priority but don't ignore completely. May become more relevant over time.`;
+      }
+    }
+
+    // ===== TOP BAR =====
+    function renderTopBar() {
+      return `
+        <div class="bg-white border-b border-gray-200 sticky top-0 z-50">
+          <div class="px-8 py-4 flex items-center justify-between">
+            <h1 class="text-3xl font-bold text-gray-900">${projectData.projectContext.companyName}</h1>
+            <div class="flex items-center gap-2">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="8" r="3" stroke="#2563eb" stroke-width="2"/>
+                <circle cx="5" cy="18" r="2.5" stroke="#2563eb" stroke-width="1.5"/>
+                <circle cx="19" cy="18" r="2.5" stroke="#2563eb" stroke-width="1.5"/>
+                <circle cx="12" cy="18" r="2.5" stroke="#2563eb" stroke-width="1.5"/>
+                <line x1="12" y1="11" x2="12" y2="15.5" stroke="#2563eb" stroke-width="1.5"/>
+                <line x1="12" y1="14" x2="5" y2="15.5" stroke="#2563eb" stroke-width="1.5"/>
+                <line x1="12" y1="14" x2="19" y2="15.5" stroke="#2563eb" stroke-width="1.5"/>
+              </svg>
+              <span class="text-base font-semibold text-gray-500 tracking-wide">Stakeholder Intelligence</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderViewButtons() {
+      return '<div class="flex gap-2">' +
+        '<button onclick="setView(\'list\')" class="px-4 py-2 rounded-lg text-sm font-semibold shadow-sm border ' +
+          (currentView === 'matrix' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50') + '">' +
+          'Stakeholders</button>' +
+        '<button onclick="setView(\'synthesis\')" class="px-4 py-2 rounded-lg text-sm font-semibold shadow-sm border ' +
+          (currentView === 'synthesis' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50') + '">' +
+          'Synthesis</button>' +
+      '</div>';
+    }
+
+    // ===== INTERACTIVE MATRIX VIEW =====
+    function renderProfileNav(id) {
+      const profile = projectData.stakeholders[id];
+      const items = [
+        { key: 'matrix', label: 'Matrix' },
+        { key: 'overview', label: 'Summary' },
+        { key: 'goals', label: 'Goals' },
+        { key: 'needs', label: 'Needs from You' },
+        { key: 'painPoints', label: 'Pain Points' },
+        { key: 'hiddenAgendas', label: 'Hidden Agendas', isPrivate: true },
+        { key: 'keyQuotes', label: 'Key Quotes' },
+        { key: 'recommendations', label: 'Recommendations' },
+        { key: 'contradictions', label: 'Contradictions', badge: profile.contradictions }
+      ];
+      return items.map(function(item) {
+        var isActive = currentSection === item.key;
+        var privateTag = item.isPrivate ? ' <span class="text-xs text-gray-400">(Private)</span>' : '';
+        var badgeTag = item.badge ? '<span class="text-xs font-medium bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">' + item.badge + '</span>' : '';
+        var activeClass = isActive ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900';
+        return '<a onclick="setSection(\'' + item.key + '\')" class="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer transition-colors ' + activeClass + '">' +
+          '<span>' + item.label + privateTag + '</span>' +
+          badgeTag + '</a>';
+      }).join('');
+    }
+
+    function renderMatrixControls(id) {
+      const pos = stakeholderPositions[id];
+      const profile = projectData.stakeholders[id];
+
+      return `
+        <div>
+          <div class="mb-6">
+            <div class="mb-2">
+              <select onchange="selectStakeholder(this.value)" class="text-lg font-bold text-gray-900 bg-white rounded-lg px-3 py-1.5 border border-gray-200 outline-none cursor-pointer pr-8" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; -webkit-appearance: none; -moz-appearance: none; appearance: none;">
+                ${Object.entries(projectData.stakeholders).map(([sid, s]) =>
+                  '<option value="' + sid + '"' + (sid === id ? ' selected' : '') + '>' + s.name + '</option>'
+                ).join('')}
+              </select>
+            </div>
+            <p class="text-sm text-gray-600">${profile.role}</p>
+            <p class="text-xs text-gray-500 mt-1 italic">${profile.disposition}</p>
+            <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p class="text-xs text-blue-800 leading-relaxed">${profile.keyDynamic}</p>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-sm font-semibold text-gray-700">Power / Influence</label>
+                <span class="text-sm font-medium text-gray-900">${getInfluenceLabel(pos.influence)}</span>
+              </div>
+              <input type="range" min="0" max="100" value="${pos.influence}"
+                oninput="updateStakeholderLive('${id}', 'influence', this.value)"
+                onchange="updateStakeholderFinal('${id}', 'influence', this.value)"
+                class="w-full" />
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Low</span><span>Medium</span><span>High</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-sm font-semibold text-gray-700">Interest / Engagement</label>
+                <span class="text-sm font-medium text-gray-900">${getInterestLabel(pos.interest)}</span>
+              </div>
+              <input type="range" min="0" max="100" value="${pos.interest}"
+                oninput="updateStakeholderLive('${id}', 'interest', this.value)"
+                onchange="updateStakeholderFinal('${id}', 'interest', this.value)"
+                class="w-full" />
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Low</span><span>Medium</span><span>High</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-sm font-semibold text-gray-700">Attitude</label>
+                <span class="text-sm font-medium text-gray-900">${getAttitudeLabel(pos.attitude)}</span>
+              </div>
+              <input type="range" min="-100" max="100" value="${pos.attitude}"
+                oninput="updateStakeholderLive('${id}', 'attitude', this.value)"
+                onchange="updateStakeholderFinal('${id}', 'attitude', this.value)"
+                class="w-full attitude-slider" />
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Negative</span><span>Neutral</span><span>Positive</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <h3 class="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wide">Insights</h3>
+            <nav class="space-y-1">
+              ${renderProfileNav(id)}
+            </nav>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMatrixNoSelection() {
+      return `
+        <div class="flex flex-col items-center justify-center h-full text-center">
+          <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path>
+          </svg>
+          <p class="text-gray-600 font-medium">Select a stakeholder</p>
+          <p class="text-sm text-gray-500 mt-2">Click or drag any dot on the matrix</p>
+        </div>
+      `;
+    }
+
+    // Section labels for titles
+    const sectionLabels = {
+      matrix: 'Matrix',
+      overview: 'Summary',
+      goals: 'Goals',
+      needs: 'Needs from You',
+      painPoints: 'Pain Points',
+      hiddenAgendas: 'Hidden Agendas',
+      keyQuotes: 'Key Quotes',
+      recommendations: 'Recommendations',
+      contradictions: 'Contradictions'
+    };
+
+    function renderDetailAccordion(key, title, contentHtml) {
+      var isOpen = expandedDetailSections.has(key);
+      return '<div class="border border-gray-200 rounded-lg overflow-hidden">' +
+        '<button onclick="toggleDetailSection(\'' + key + '\')" class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">' +
+          '<span class="text-sm font-semibold text-gray-700">' + title + '</span>' +
+          '<svg class="w-4 h-4 text-gray-400 transform transition-transform ' + (isOpen ? 'rotate-180' : '') + '" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>' +
+        '</button>' +
+        (isOpen ? '<div class="px-4 py-3 border-t border-gray-200">' + contentHtml + '</div>' : '') +
+      '</div>';
+    }
+
+    function renderSectionDetail(id, sectionKey) {
+      var profile = projectData.stakeholders[id];
+      var content = profile[sectionKey];
+
+      // Overview / Summary
+      if (sectionKey === 'overview' && Array.isArray(content)) {
+        return '<div class="space-y-4">' +
+          content.map(function(para) {
+            return '<p class="text-sm text-gray-700 leading-relaxed">' + para + '</p>';
+          }).join('') +
+        '</div>';
+      }
+
+      // Contradictions - special handling (unchanged structure)
+      if (sectionKey === 'contradictions') {
+        var relevant = projectData.contradictions.filter(function(c) {
+          return c.stakeholders.indexOf(profile.name) > -1 ||
+                 c.stakeholders.indexOf(profile.name.split(' ')[0]) > -1;
+        });
+        if (relevant.length === 0) return '<p class="text-sm text-gray-500">No contradictions found.</p>';
+        return relevant.map(function(c) {
+          return '<div class="border border-gray-200 rounded-lg p-4 mb-4">' +
+            '<div class="flex items-start justify-between mb-3">' +
+              '<h3 class="font-semibold text-gray-900">' + c.theme + '</h3>' +
+              '<span class="contradiction-badge severity-' + c.severity.toLowerCase() + '">' + c.severity + '</span>' +
+            '</div>' +
+            '<div class="space-y-2 mb-3">' +
+              Object.entries(c.positions).map(function(entry) {
+                return '<div class="text-sm"><span class="font-medium text-gray-900">' + entry[0] + ':</span> <span class="text-gray-700">' + entry[1] + '</span></div>';
+              }).join('') +
+            '</div>' +
+            (Object.keys(c.quotes).length > 0 ?
+              '<div class="bg-gray-50 rounded p-3 mb-3">' +
+                '<div class="text-xs font-semibold text-gray-700 mb-2">KEY QUOTES:</div>' +
+                Object.entries(c.quotes).map(function(entry) {
+                  return '<div class="text-sm italic text-gray-700 mb-1"><span class="font-medium not-italic">' + entry[0] + ':</span> &ldquo;' + entry[1] + '&rdquo;</div>';
+                }).join('') +
+              '</div>' : '') +
+            '<div class="text-sm text-gray-700 bg-yellow-50 border-l-4 border-yellow-400 p-3"><span class="font-semibold">Implications:</span> ' + c.implications + '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      // Key Quotes - rich object with featured + all
+      if (sectionKey === 'keyQuotes' && content && content.featured) {
+        return '<div class="space-y-5">' +
+          '<p class="text-sm text-gray-700 leading-relaxed">' + content.summary + '</p>' +
+          '<div class="space-y-3">' +
+            content.all.map(function(q) {
+              return '<blockquote class="text-sm text-gray-700 italic pl-4 border-l-2 border-blue-400 py-2 bg-blue-50 rounded-r-lg pr-4">&ldquo;' + q + '&rdquo;</blockquote>';
+            }).join('') +
+          '</div>' +
+        '</div>';
+      }
+
+      // Recommendations - rich object with summary + immediate/ongoing/risks
+      if (sectionKey === 'recommendations' && content && content.summary) {
+        return '<div class="space-y-5">' +
+          '<p class="text-sm text-gray-700 leading-relaxed">' + content.summary + '</p>' +
+          '<div class="space-y-4">' +
+            '<div><div class="text-xs font-semibold text-red-700 mb-2">IMMEDIATE</div>' +
+              '<ul class="space-y-2">' + content.immediate.map(function(item) {
+                return '<li class="text-sm text-gray-700 pl-3 border-l-2 border-red-300">' + item + '</li>';
+              }).join('') + '</ul></div>' +
+            '<div><div class="text-xs font-semibold text-yellow-700 mb-2">ONGOING</div>' +
+              '<ul class="space-y-2">' + content.ongoing.map(function(item) {
+                return '<li class="text-sm text-gray-700 pl-3 border-l-2 border-yellow-300">' + item + '</li>';
+              }).join('') + '</ul></div>' +
+            '<div><div class="text-xs font-semibold text-gray-700 mb-2">RISKS</div>' +
+              '<ul class="space-y-2">' + content.risks.map(function(item) {
+                return '<li class="text-sm text-gray-700 pl-3 border-l-2 border-gray-300">' + item + '</li>';
+              }).join('') + '</ul></div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      // Rich object sections (goals, needs, painPoints, hiddenAgendas)
+      if (content && content.summary && content.items) {
+        var allQuotes = content.quotes || [];
+        return '<div class="space-y-5">' +
+          '<p class="text-sm text-gray-700 leading-relaxed">' + content.summary + '</p>' +
+          (allQuotes.length > 0 ?
+            '<blockquote class="text-sm text-gray-700 italic pl-4 border-l-2 border-blue-400 py-2 bg-blue-50 rounded-r-lg pr-4">&ldquo;' + allQuotes[0] + '&rdquo;</blockquote>' : '') +
+          '<div class="space-y-4">' +
+            content.items.map(function(item) {
+              return '<div>' +
+                '<div class="text-sm font-semibold text-gray-900 mb-1">' + item.title + '</div>' +
+                '<p class="text-sm text-gray-700 leading-relaxed">' + item.detail + '</p>' +
+              '</div>';
+            }).join('') +
+          '</div>' +
+          (allQuotes.length > 1 ?
+            '<div class="space-y-2">' +
+              allQuotes.slice(1).map(function(q) {
+                return '<blockquote class="text-sm text-gray-700 italic pl-4 border-l-2 border-gray-300 py-1">&ldquo;' + q + '&rdquo;</blockquote>';
+              }).join('') +
+            '</div>' : '') +
+        '</div>';
+      }
+
+      // Fallback for simple arrays
+      if (Array.isArray(content)) {
+        return '<ul class="space-y-3">' + content.map(function(item) {
+          return '<li class="text-sm text-gray-700 pl-3 border-l-2 border-gray-200">' + item + '</li>';
+        }).join('') + '</ul>';
+      }
+
+      return '<p class="text-sm text-gray-500">No data available.</p>';
+    }
+
+    function renderMainPanel() {
+      var title, subtitle, contentHtml;
+
+      if (currentSection === 'matrix') {
+        title = 'Matrix';
+        subtitle = 'Drag to position &bull; Color shows attitude';
+        contentHtml = renderMatrixContent();
+      } else if (selectedStakeholder) {
+        var profile = projectData.stakeholders[selectedStakeholder];
+        title = sectionLabels[currentSection] || currentSection;
+        subtitle = profile.name + ' &bull; ' + profile.role;
+        contentHtml = '<div class="bg-white rounded-lg border border-gray-200 p-8 shadow-sm overflow-auto" style="max-height: calc(100vh - 280px);">' +
+          renderSectionDetail(selectedStakeholder, currentSection) +
+        '</div>';
+      } else {
+        return '';
+      }
+
+      return '<div class="max-w-5xl mx-auto">' +
+        '<div class="mb-12 flex items-start justify-between">' +
+          '<div>' +
+            '<h1 class="text-4xl font-bold text-gray-900 mb-3 tracking-tight">' + title + '</h1>' +
+            '<p class="text-base text-gray-600">' + subtitle + '</p>' +
+          '</div>' +
+          renderViewButtons() +
+        '</div>' +
+        contentHtml +
+      '</div>';
+    }
+
+    function renderMatrixContent() {
+      const stakeholders = Object.entries(stakeholderPositions);
+      return `
+          <div class="bg-white rounded-lg border border-gray-200 p-12 shadow-sm">
+            <svg id="matrixSvg" viewBox="0 0 100 100" class="w-full" style="max-width: 900px; max-height: 50vh; margin: 0 auto; touch-action: none;"
+                 onmousemove="handleMatrixDrag(event)" onmouseup="stopDragging()" onmouseleave="stopDragging()"
+                 ontouchmove="handleMatrixDrag(event)" ontouchend="stopDragging()" ontouchcancel="stopDragging()">
+              <!-- Quadrant backgrounds -->
+              <rect x="0" y="0" width="50" height="50" fill="#F9FAFB"/>
+              <rect x="50" y="0" width="50" height="50" fill="#F3F4F6"/>
+              <rect x="0" y="50" width="50" height="50" fill="#E5E7EB"/>
+              <rect x="50" y="50" width="50" height="50" fill="#D1D5DB"/>
+
+              <!-- Grid lines -->
+              <line x1="50" y1="0" x2="50" y2="100" stroke="#9CA3AF" stroke-width="0.25"/>
+              <line x1="0" y1="50" x2="100" y2="50" stroke="#9CA3AF" stroke-width="0.25"/>
+
+              <!-- Axes -->
+              <line x1="0" y1="100" x2="100" y2="100" stroke="#374151" stroke-width="0.4"/>
+              <line x1="0" y1="0" x2="0" y2="100" stroke="#374151" stroke-width="0.4"/>
+
+              <!-- Quadrant labels -->
+              <text x="25" y="5.5" text-anchor="middle" font-size="2.8" fill="#4B5563" font-weight="700" letter-spacing="0.5">KEEP SATISFIED</text>
+              <text x="75" y="5.5" text-anchor="middle" font-size="2.8" fill="#4B5563" font-weight="700" letter-spacing="0.5">MANAGE CLOSELY</text>
+              <text x="25" y="96" text-anchor="middle" font-size="2.8" fill="#4B5563" font-weight="700" letter-spacing="0.5">MONITOR</text>
+              <text x="75" y="96" text-anchor="middle" font-size="2.8" fill="#4B5563" font-weight="700" letter-spacing="0.5">KEEP INFORMED</text>
+
+              <!-- Axis labels -->
+              <text x="50" y="105" text-anchor="middle" font-size="3.2" fill="#111827" font-weight="700" letter-spacing="0.3">INTEREST / ENGAGEMENT &rarr;</text>
+              <text x="-3" y="50" text-anchor="middle" font-size="3.2" fill="#111827" font-weight="700" letter-spacing="0.3" transform="rotate(-90 -3 50)">&larr; POWER / INFLUENCE</text>
+
+              <!-- Stakeholder dots -->
+              ${stakeholders.map(([id, pos]) => {
+                const x = pos.interest;
+                const y = 100 - pos.influence;
+                const color = getAttitudeColor(pos.attitude);
+                const isSelected = selectedStakeholder === id;
+                const profile = projectData.stakeholders[id];
+
+                return `
+                  <g class="stakeholder-dot">
+                    <circle class="stakeholder-circle ${isSelected ? 'selected' : ''}"
+                            cx="${x}" cy="${y}" r="${isSelected ? 2.5 : 2}"
+                            fill="${color}"
+                            stroke="${isSelected ? '#2563eb' : 'white'}"
+                            stroke-width="${isSelected ? '1' : '0.5'}"
+                            data-stakeholder-id="${id}"
+                            onmousedown="startDragging(event, '${id}')"
+                            ontouchstart="startDragging(event, '${id}')"
+                            style="cursor: grab;"/>
+                    <text x="${x}" y="${y - 4.5}" text-anchor="middle" font-size="2.5"
+                          fill="#111827" font-weight="600" font-stretch="condensed"
+                          style="pointer-events: none; user-select: none;">
+                      ${profile.name.split(' ')[0]}
+                    </text>
+                  </g>
+                `;
+              }).join('')}
+            </svg>
+
+            <!-- Legend -->
+            <div class="mt-8 flex items-center justify-center">
+              <div class="bg-gray-50 px-6 py-3 rounded-lg border border-gray-200 flex items-center gap-6">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-full" style="background: ${getAttitudeColor(80)}"></div>
+                  <span class="text-sm text-gray-700 font-medium">Positive</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-full" style="background: ${getAttitudeColor(0)}"></div>
+                  <span class="text-sm text-gray-700 font-medium">Neutral</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-full" style="background: ${getAttitudeColor(-80)}"></div>
+                  <span class="text-sm text-gray-700 font-medium">Negative</span>
+                </div>
+              </div>
+            </div>
+          </div>
+      `;
+    }
+
+    function renderInfluenceMatrix() {
+      return `
+        <div class="flex" style="height: calc(100vh - 73px); overflow: hidden;">
+          <!-- Left: Controls Panel -->
+          <div id="matrixControlPanel" class="w-96 bg-white border-r-2 border-gray-200 p-8 overflow-auto">
+            ${selectedStakeholder ? renderMatrixControls(selectedStakeholder) : renderMatrixNoSelection()}
+          </div>
+
+          <!-- Right: Main content area -->
+          <div class="flex-1 p-8 overflow-auto" style="scrollbar-gutter: stable;">
+            ${renderMainPanel()}
+          </div>
+        </div>
+      `;
+    }
+
+    // ===== STAKEHOLDER LIST VIEW =====
+    function renderStakeholderAccordion(id, stakeholder) {
+      const sections = [
+        { key: 'goals', title: 'Goals', icon: '&#127919;' },
+        { key: 'needs', title: 'Needs from You', icon: '&#129309;' },
+        { key: 'painPoints', title: 'Pain Points', icon: '&#9888;&#65039;' },
+        { key: 'hiddenAgendas', title: 'Hidden Agendas', icon: '&#128274;', private: true },
+        { key: 'keyQuotes', title: 'Key Quotes', icon: '&#128172;' },
+        { key: 'recommendations', title: 'Recommendations', icon: '&#128161;' },
+        { key: 'contradictions', title: 'Contradictions (' + stakeholder.contradictions + ')', icon: '&#9889;', badge: true }
+      ];
+
+      return `
+        <div class="bg-white rounded-lg border border-gray-200 mb-4" id="stakeholder-${id}">
+          <div class="p-6 border-b border-gray-200">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <div class="flex items-center gap-3 mb-2">
+                  <h3 class="text-lg font-semibold text-gray-900">${stakeholder.name}</h3>
+                  <span class="px-2 py-1 rounded text-xs font-medium" style="background-color: ${getDispositionColor(stakeholder.disposition)}20; color: ${getDispositionColor(stakeholder.disposition)}">${stakeholder.disposition}</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">${stakeholder.role}</p>
+                <p class="text-sm text-gray-700 italic">${stakeholder.keyDynamic}</p>
+              </div>
+              <div class="flex gap-4 text-center">
+                <div>
+                  <div class="text-xs text-gray-500">Influence</div>
+                  <div class="text-sm font-semibold ${stakeholder.influence === 'High' ? 'text-red-600' : stakeholder.influence === 'Medium' ? 'text-yellow-600' : 'text-gray-600'}">${stakeholder.influence}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">Interest</div>
+                  <div class="text-sm font-semibold ${stakeholder.interest === 'High' ? 'text-blue-600' : 'text-gray-600'}">${stakeholder.interest}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            ${sections.map(section => {
+              const isExpanded = expandedAccordions.has(id + '-' + section.key);
+              const content = stakeholder[section.key];
+              if (!content) return '';
+
+              return `
+                <div class="border-b border-gray-100 last:border-b-0">
+                  <div class="accordion-header p-4 flex items-center justify-between" onclick="toggleAccordion('${id}-${section.key}')">
+                    <div class="flex items-center gap-2">
+                      <span>${section.icon}</span>
+                      <span class="font-medium text-gray-900">${section.title}</span>
+                      ${section.private ? '<span class="text-xs text-gray-500 ml-2">(Private)</span>' : ''}
+                      ${section.badge && stakeholder.contradictions > 0 ? '<span class="contradiction-badge severity-high">' + stakeholder.contradictions + '</span>' : ''}
+                    </div>
+                    <svg class="w-5 h-5 text-gray-400 transform transition-transform ${isExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </div>
+                  ${isExpanded ? '<div class="px-4 pb-4">' + renderAccordionContent(section.key, content) + '</div>' : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAccordionContent(key, content) {
+      // Recommendations with summary
+      if (key === 'recommendations' && content.summary) {
+        return '<div class="space-y-3">' +
+          '<p class="text-sm text-gray-700 mb-2">' + content.summary + '</p>' +
+          '<div><div class="text-xs font-semibold text-red-700 mb-1">IMMEDIATE:</div>' +
+            '<ul class="text-sm text-gray-700 space-y-1">' + content.immediate.map(function(item) { return '<li>&bull; ' + item + '</li>'; }).join('') + '</ul></div>' +
+          '<div><div class="text-xs font-semibold text-yellow-700 mb-1">ONGOING:</div>' +
+            '<ul class="text-sm text-gray-700 space-y-1">' + content.ongoing.map(function(item) { return '<li>&bull; ' + item + '</li>'; }).join('') + '</ul></div>' +
+          '<div><div class="text-xs font-semibold text-gray-700 mb-1">RISKS:</div>' +
+            '<ul class="text-sm text-gray-700 space-y-1">' + content.risks.map(function(item) { return '<li>&#9888;&#65039; ' + item + '</li>'; }).join('') + '</ul></div>' +
+        '</div>';
+      }
+      // Key Quotes with featured
+      if (key === 'keyQuotes' && content.all) {
+        return '<div class="space-y-3">' +
+          '<p class="text-sm text-gray-700 mb-1">' + content.summary + '</p>' +
+          content.all.map(function(q) {
+            return '<div class="text-sm italic text-gray-700 pl-4 border-l-2 border-gray-300">&ldquo;' + q + '&rdquo;</div>';
+          }).join('') +
+        '</div>';
+      }
+      // Rich object sections (goals, needs, painPoints, hiddenAgendas)
+      if (content && content.summary && content.items) {
+        return '<div class="space-y-3">' +
+          '<p class="text-sm text-gray-700 mb-1">' + content.summary + '</p>' +
+          content.items.map(function(item) {
+            return '<div class="text-sm text-gray-700"><span class="font-medium text-gray-900">' + item.title + ':</span> ' + item.detail + '</div>';
+          }).join('') +
+          (content.quotes && content.quotes.length > 0 ?
+            '<div class="mt-2 pt-2 border-t border-gray-100">' +
+              content.quotes.map(function(q) {
+                return '<div class="text-sm italic text-gray-600 pl-4 border-l-2 border-gray-300">&ldquo;' + q + '&rdquo;</div>';
+              }).join('') +
+            '</div>' : '') +
+        '</div>';
+      }
+      // Fallback for simple arrays
+      if (Array.isArray(content)) {
+        return '<ul class="text-sm text-gray-700 space-y-2">' +
+          content.map(function(item) { return '<li>&bull; ' + item + '</li>'; }).join('') +
+          '</ul>';
+      }
+      return '<p class="text-sm text-gray-700">' + content + '</p>';
+    }
+
+    function renderStakeholderList() {
+      const stakeholders = Object.entries(projectData.stakeholders);
+      return `
+        <div class="flex" style="height: calc(100vh - 73px); overflow: hidden;">
+          <!-- Left: Controls Panel -->
+          <div id="matrixControlPanel" class="w-96 bg-white border-r-2 border-gray-200 p-8 overflow-auto">
+            ${selectedStakeholder ? renderMatrixControls(selectedStakeholder) : renderMatrixNoSelection()}
+          </div>
+
+          <!-- Right: Stakeholder list -->
+          <div class="flex-1 p-8 overflow-auto" style="scrollbar-gutter: stable;">
+            <div class="max-w-5xl mx-auto">
+              <div class="mb-12 flex items-start justify-between">
+                <div>
+                  <h1 class="text-4xl font-bold text-gray-900 mb-3 tracking-tight">Stakeholder Profiles</h1>
+                  <p class="text-base text-gray-600">Click sections to expand details</p>
+                </div>
+                ${renderViewButtons()}
+              </div>
+              ${stakeholders.map(([id, s]) => renderStakeholderAccordion(id, s)).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ===== SYNTHESIS VIEW =====
+    function renderSynthesisContent() {
+      return `
+        <div class="space-y-8">
+          <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h2 class="text-xl font-semibold text-red-900 mb-4">Immediate Crises</h2>
+            ${projectData.crises.map(crisis => `
+              <div class="mb-4 last:mb-0">
+                <div class="flex items-start justify-between mb-2">
+                  <h3 class="font-semibold text-red-900">${crisis.name}</h3>
+                  <span class="text-xs font-bold px-2 py-1 bg-red-200 text-red-900 rounded">${crisis.severity}</span>
+                </div>
+                <p class="text-sm text-red-800 mb-2">${crisis.description}</p>
+                <p class="text-sm text-red-900 font-medium">&rarr; ${crisis.action}</p>
+              </div>
+            `).join('<hr class="my-4 border-red-200">')}
+          </div>
+
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold mb-4">Key Contradictions</h2>
+            <div class="space-y-4">
+              ${projectData.contradictions.map(c => `
+                <div class="border border-gray-200 rounded-lg p-4">
+                  <div class="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 class="font-semibold text-gray-900">${c.theme}</h3>
+                      <p class="text-xs text-gray-500 mt-1">${c.stakeholders.join(', ')}</p>
+                    </div>
+                    <span class="contradiction-badge severity-${c.severity.toLowerCase()}">${c.severity}</span>
+                  </div>
+                  <div class="space-y-2 mb-3">
+                    ${Object.entries(c.positions).map(([person, position]) => `
+                      <div class="text-sm"><span class="font-medium text-gray-900">${person}:</span> <span class="text-gray-700">${position}</span></div>
+                    `).join('')}
+                  </div>
+                  ${Object.keys(c.quotes).length > 0 ? `
+                    <div class="bg-gray-50 rounded p-3 mb-3">
+                      <div class="text-xs font-semibold text-gray-700 mb-2">KEY QUOTES:</div>
+                      ${Object.entries(c.quotes).map(([person, quote]) => `
+                        <div class="text-sm italic text-gray-700 mb-1"><span class="font-medium not-italic">${person}:</span> &ldquo;${quote}&rdquo;</div>
+                      `).join('')}
+                    </div>
+                  ` : ''}
+                  <div class="text-sm text-gray-700 bg-yellow-50 border-l-4 border-yellow-400 p-3">
+                    <span class="font-semibold">Implications:</span> ${c.implications}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold mb-4">Themes Across Stakeholders</h2>
+            <div class="space-y-6">
+              <div>
+                <h3 class="font-semibold text-green-700 mb-2">Consensus (what everyone agrees on)</h3>
+                <div class="space-y-2">
+                  ${projectData.themes.consensus.map(t => `
+                    <div class="text-sm bg-green-50 border border-green-200 rounded p-3">
+                      <div class="font-medium text-green-900">${t.theme}</div>
+                      <div class="text-green-700 text-xs mt-1">${t.note} ${t.genuine ? '' : '&#9888;&#65039; Performed consensus, not genuine'}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+              <div>
+                <h3 class="font-semibold text-orange-700 mb-2">Fractured (disagreements)</h3>
+                <div class="space-y-2">
+                  ${projectData.themes.fractured.map(t => `
+                    <div class="text-sm bg-orange-50 border border-orange-200 rounded p-3">
+                      <div class="font-medium text-orange-900">${t.theme}</div>
+                      <div class="text-orange-700 text-xs mt-1">${t.positions.join(' | ')}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+              <div>
+                <h3 class="font-semibold text-gray-700 mb-2">Silence (what nobody mentions)</h3>
+                <div class="space-y-1">
+                  ${projectData.themes.silence.map(t => `
+                    <div class="text-sm bg-gray-50 border border-gray-200 rounded p-2 text-gray-700">&bull; ${t}</div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSynthesisView() {
+      return `
+        <div class="flex" style="height: calc(100vh - 73px); overflow: hidden;">
+          <!-- Left: Controls Panel -->
+          <div id="matrixControlPanel" class="w-96 bg-white border-r-2 border-gray-200 p-8 overflow-auto">
+            ${selectedStakeholder ? renderMatrixControls(selectedStakeholder) : renderMatrixNoSelection()}
+          </div>
+
+          <!-- Right: Synthesis content -->
+          <div class="flex-1 p-8 overflow-auto" style="scrollbar-gutter: stable;">
+            <div class="max-w-5xl mx-auto">
+              <div class="mb-12 flex items-start justify-between">
+                <div>
+                  <h1 class="text-4xl font-bold text-gray-900 mb-3 tracking-tight">Cross-Stakeholder Synthesis</h1>
+                  <p class="text-base text-gray-600">Round ${projectData.metadata.currentRound} &bull; ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                </div>
+                ${renderViewButtons()}
+              </div>
+              ${renderSynthesisContent()}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ===== MAIN RENDER =====
+    function render() {
+      const views = { 'matrix': renderInfluenceMatrix, 'list': renderStakeholderList, 'synthesis': renderSynthesisView };
+      document.getElementById('app').innerHTML = renderTopBar() + views[currentView]();
+    }
+
+    // ===== MATRIX SVG UPDATES (no full re-render) =====
+    function updateMatrixSVG() {
+      Object.entries(stakeholderPositions).forEach(([id, pos]) => {
+        const x = pos.interest;
+        const y = 100 - pos.influence;
+        const color = getAttitudeColor(pos.attitude);
+        const isSelected = selectedStakeholder === id;
+
+        const circle = document.querySelector('circle[data-stakeholder-id="' + id + '"]');
+        if (circle) {
+          circle.setAttribute('cx', x);
+          circle.setAttribute('cy', y);
+          circle.setAttribute('fill', color);
+          if (isSelected) {
+            circle.classList.add('selected');
+            circle.setAttribute('r', '2.5');
+            circle.setAttribute('stroke', '#2563eb');
+            circle.setAttribute('stroke-width', '1');
+          } else {
+            circle.classList.remove('selected');
+            circle.setAttribute('r', '2');
+            circle.setAttribute('stroke', 'white');
+            circle.setAttribute('stroke-width', '0.5');
+          }
+          const text = circle.parentElement.querySelector('text');
+          if (text) {
+            text.setAttribute('x', x);
+            text.setAttribute('y', y - 4.5);
+          }
+        }
+      });
+    }
+
+    function updateControlLabels(id) {
+      const pos = stakeholderPositions[id];
+      if (!pos || selectedStakeholder !== id) return;
+      const panel = document.getElementById('matrixControlPanel');
+      if (!panel) return;
+      const labels = panel.querySelectorAll('.text-sm.font-medium.text-gray-900');
+      if (labels[0]) labels[0].textContent = getInfluenceLabel(pos.influence);
+      if (labels[1]) labels[1].textContent = getInterestLabel(pos.interest);
+      if (labels[2]) labels[2].textContent = getAttitudeLabel(pos.attitude);
+      const values = panel.querySelectorAll('.space-y-2.text-sm .font-medium');
+      if (values[0]) values[0].textContent = Math.round(pos.influence);
+      if (values[1]) values[1].textContent = Math.round(pos.interest);
+      if (values[2]) values[2].textContent = (pos.attitude > 0 ? '+' : '') + Math.round(pos.attitude);
+    }
+
+    function updateControlSliders(id) {
+      const pos = stakeholderPositions[id];
+      if (!pos || selectedStakeholder !== id) return;
+      const panel = document.getElementById('matrixControlPanel');
+      if (!panel) return;
+      const sliders = panel.querySelectorAll('input[type="range"]');
+      if (sliders[0]) sliders[0].value = pos.influence;
+      if (sliders[1]) sliders[1].value = pos.interest;
+      if (sliders[2]) sliders[2].value = pos.attitude;
+    }
+
+    // ===== EVENT HANDLERS =====
+    window.setView = function(view) {
+      if (view === 'list') {
+        currentView = 'matrix';
+      } else {
+        currentView = view;
+      }
+      render();
+    };
+
+    window.selectStakeholder = function(id) {
+      selectedStakeholder = id;
+      expandedDetailSections.clear();
+      if (currentView === 'matrix') {
+        updateMatrixSVG();
+        const panel = document.getElementById('matrixControlPanel');
+        if (panel) panel.innerHTML = renderMatrixControls(id);
+        const mainPanel = document.querySelector('.flex-1.p-8.overflow-auto');
+        if (mainPanel) mainPanel.innerHTML = renderMainPanel();
+      }
+    };
+
+    window.viewStakeholderProfile = function(id) {
+      selectedStakeholder = id;
+      currentView = 'list';
+      expandedAccordions.clear();
+      render();
+      setTimeout(() => {
+        const el = document.getElementById('stakeholder-' + id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    };
+
+    window.setSection = function(sectionKey) {
+      currentSection = sectionKey;
+      expandedDetailSections.clear();
+      render();
+    };
+
+    window.toggleAccordion = function(key) {
+      if (expandedAccordions.has(key)) { expandedAccordions.delete(key); }
+      else { expandedAccordions.add(key); }
+      render();
+    };
+
+    window.toggleDetailSection = function(key) {
+      if (expandedDetailSections.has(key)) { expandedDetailSections.delete(key); }
+      else { expandedDetailSections.add(key); }
+      var container = document.querySelector('.flex-1.p-8.overflow-auto');
+      if (container) {
+        container.innerHTML = renderMainPanel();
+      }
+    };
+
+    window.startDragging = function(event, id) {
+      event.preventDefault();
+      event.stopPropagation();
+      draggedStakeholder = id;
+      selectedStakeholder = id;
+      currentSection = 'matrix';
+      updateMatrixSVG();
+      const panel = document.getElementById('matrixControlPanel');
+      if (panel) panel.innerHTML = renderMatrixControls(id);
+    };
+
+    window.stopDragging = function() {
+      if (draggedStakeholder) {
+        const circles = document.querySelectorAll('.stakeholder-circle');
+        circles.forEach(c => c.style.cursor = 'grab');
+        draggedStakeholder = null;
+      }
+    };
+
+    window.handleMatrixDrag = function(event) {
+      if (!draggedStakeholder) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const svg = document.getElementById('matrixSvg');
+      if (!svg) return;
+
+      let clientX, clientY;
+      if (event.type.startsWith('touch')) {
+        if (event.touches.length === 0) return;
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+      } else {
+        clientX = event.clientX;
+        clientY = event.clientY;
+      }
+
+      const point = svg.createSVGPoint();
+      point.x = clientX;
+      point.y = clientY;
+      const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
+
+      const interest = svgPoint.x;
+      const influence = 100 - svgPoint.y;
+
+      stakeholderPositions[draggedStakeholder].interest = Math.round(Math.max(0, Math.min(100, interest)));
+      stakeholderPositions[draggedStakeholder].influence = Math.round(Math.max(0, Math.min(100, influence)));
+
+      updateMatrixSVG();
+      updateControlSliders(draggedStakeholder);
+      updateControlLabels(draggedStakeholder);
+    };
+
+    window.updateStakeholderLive = function(id, field, value) {
+      stakeholderPositions[id][field] = parseFloat(value);
+      updateMatrixSVG();
+      updateControlLabels(id);
+    };
+
+    window.updateStakeholderFinal = function(id, field, value) {
+      stakeholderPositions[id][field] = parseFloat(value);
+      render();
+    };
+
+    // ===== KEYBOARD NAVIGATION =====
+    const navKeys = ['matrix', 'overview', 'goals', 'needs', 'painPoints', 'hiddenAgendas', 'keyQuotes', 'recommendations', 'contradictions'];
+
+    document.addEventListener('keydown', function(e) {
+      if ((currentView !== 'matrix' && currentView !== 'synthesis') || !selectedStakeholder) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        var idx = navKeys.indexOf(currentSection);
+        if (idx === -1) idx = 0;
+        if (e.key === 'ArrowDown') {
+          idx = (idx + 1) % navKeys.length;
+        } else {
+          idx = (idx - 1 + navKeys.length) % navKeys.length;
+        }
+        currentSection = navKeys[idx];
+        expandedDetailSections.clear();
+        if (currentView === 'matrix') {
+          var mainPanel = document.querySelector('.flex-1.p-8.overflow-auto');
+          if (mainPanel) mainPanel.innerHTML = renderMainPanel();
+        }
+        var controlPanel = document.getElementById('matrixControlPanel');
+        if (controlPanel) controlPanel.innerHTML = renderMatrixControls(selectedStakeholder);
+      }
+    });
+
+    // ===== INIT =====
+    // Auto-select the top-left stakeholder (highest influence, lowest interest)
+    selectedStakeholder = Object.entries(stakeholderPositions)
+      .sort((a, b) => (b[1].influence - a[1].influence) || (a[1].interest - b[1].interest))[0][0];
+    render();
+  </script>
+</body>
+</html>
