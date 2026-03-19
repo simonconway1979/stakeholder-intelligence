@@ -2,6 +2,8 @@
 
 An AI-powered tool that helps product leaders build deep understanding of their stakeholder landscape during onboarding, based on "The First 90 Days" methodology by Michael Watkins.
 
+**[🎯 Try Live Demo](https://simonconway1979.github.io/stakeholder-intelligence/)** | **[📦 Public Repository](https://github.com/simonconway1979/stakeholder-intelligence)**
+
 ## Overview
 
 This system treats stakeholder understanding as versioned, evolving intelligence - not static profiles. It separates private political reads from shareable validation documents, surfaces contradictions across stakeholders, and generates professional "closing the loop" documents to build credibility.
@@ -37,19 +39,22 @@ Located in `.claude/skills/`:
 
 ### 2. Interactive Prototypes
 
+**[Live Public Demo](https://simonconway1979.github.io/stakeholder-intelligence/)** - Mobile-optimized version deployed on GitHub Pages
+
 Located in `front-end/`:
 
-**Desktop Version:** `stakeholder-intel-interactive-matrix.html`
-- Full stakeholder intelligence dashboard
-- Multiple tabs: Matrix, Goals, Questions, Contradictions
-- Drag-and-drop stakeholder positioning on influence/interest matrix
-
-**Mobile Version:** `stakeholder-intel-prototype.html`
-- Mobile-optimized responsive design with glassmorphism effects
+**Mobile Version (Public Demo):** `stakeholder-intel-prototype.html`
+- Fully responsive design with glassmorphism effects
 - Instant drag-and-drop with zero lag (direct DOM manipulation)
 - Modern UI: pill badges, enhanced spacing, cubic-bezier transitions
 - Quadrant labels positioned outside matrix for clarity
 - Dropdown selector updates immediately on stakeholder selection
+- Works seamlessly on mobile, tablet, and desktop
+
+**Desktop Version (Local):** `stakeholder-intel-interactive-matrix.html`
+- Full stakeholder intelligence dashboard
+- Multiple tabs: Matrix, Goals, Questions, Contradictions
+- Drag-and-drop stakeholder positioning on influence/interest matrix
 
 ### 3. Example Project
 
