@@ -823,13 +823,22 @@
     function renderMobileStakeholderSelector() {
       if (!selectedStakeholder) return '';
       var profile = projectData.stakeholders[selectedStakeholder];
-      return '<div class="mobile-only mb-3">' +
+      return '<div id="mobileStakeholderSelector" class="mobile-only mb-3">' +
         '<select onchange="selectStakeholder(this.value)" class="w-full text-base font-semibold text-gray-900 bg-white rounded-lg px-3 py-2 border border-gray-200 outline-none cursor-pointer" style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url(\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>\'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">' +
           Object.entries(projectData.stakeholders).map(function(entry) {
             return '<option value="' + entry[0] + '"' + (entry[0] === selectedStakeholder ? ' selected' : '') + '>' + entry[1].name + ' - ' + entry[1].role + '</option>';
           }).join('') +
         '</select>' +
       '</div>';
+    }
+
+    // Update just the mobile selector without full re-render
+    function updateMobileSelector() {
+      if (!isMobile()) return;
+      const selectorContainer = document.getElementById('mobileStakeholderSelector');
+      if (selectorContainer) {
+        selectorContainer.outerHTML = renderMobileStakeholderSelector();
+      }
     }
 
     // ===== UTILITY FUNCTIONS =====
@@ -1889,12 +1898,15 @@
       // Immediately update UI - no delay on mobile or desktop
       updateMatrixSVG();
 
-      // Update dropdown selector on mobile immediately
+      // Update mobile selector dropdown
       if (isMobile()) {
-        const selector = document.querySelector('select');
-        if (selector) {
-          selector.value = id;
-        }
+        updateMobileSelector();
+      }
+
+      // Update control panel on both mobile and desktop
+      const controlPanel = document.getElementById('matrixControlPanel');
+      if (controlPanel) {
+        controlPanel.innerHTML = renderMatrixControls(id);
       }
     };
 
