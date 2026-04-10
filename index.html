@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stakeholder Intelligence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', sans-serif; -webkit-font-smoothing: antialiased; }
+    * { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+
+    .accordion-header { cursor: pointer; transition: background-color 0.2s; }
+    .accordion-header:hover { background-color: #f9fafb; }
+    .accordion-body { display: none; }
+    .accordion-body.open { display: block; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .private-section { background-color: #fefce8; border-left: 3px solid #ca8a04; }
+
+    /* Mobile bottom bar */
+    .mobile-bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: rgba(255,255,255,0.97); backdrop-filter: blur(10px);
+      box-shadow: 0 -1px 0 #e5e7eb; display: flex;
+    }
+    .mobile-bottom-bar button {
+      flex: 1; padding: 12px 0 10px; font-size: 11px; font-weight: 600;
+      color: #9ca3af; background: none; border: none; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      transition: color 0.2s;
+    }
+    .mobile-bottom-bar button.active { color: #2563eb; }
+    .mobile-bottom-bar button.active .tab-indicator { opacity: 1; }
+    .tab-indicator {
+      position: absolute; top: 0; width: 24px; height: 2px;
+      background: #2563eb; border-radius: 0 0 2px 2px; opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .mobile-bottom-bar button { position: relative; }
+
+    @media (max-width: 767px) {
+      .desktop-nav { display: none !important; }
+      .main-content { padding-bottom: 70px; }
+    }
+    @media (min-width: 768px) {
+      .mobile-bottom-bar { display: none !important; }
+    }
+
+    .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+    .badge-critical { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .badge-high { background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
+    .badge-medium { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+    .badge-low { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .badge-blue { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .badge-green { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .badge-gray { background: #f9fafb; color: #6b7280; border: 1px solid #e5e7eb; }
+    .badge-purple { background: #faf5ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+
+    .chip { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; margin: 1px; }
+
+    .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+    .card-hover { transition: box-shadow 0.2s, transform 0.2s; cursor: pointer; }
+    .card-hover:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-1px); }
+
+    .chevron { transition: transform 0.2s cubic-bezier(0.4,0,0.2,1); }
+    .chevron.open { transform: rotate(180deg); }
+
+    .meeting-row { cursor: pointer; transition: background-color 0.15s; }
+    .meeting-row:hover { background-color: #f9fafb; }
+
+    .stakeholder-row { cursor: pointer; }
+
+    /* Matrix SVG */
+    .matrix-name { font-size: 11px; fill: #374151; font-family: inherit; }
+    .matrix-grid-line { stroke: #e5e7eb; stroke-width: 1; }
+    .matrix-axis-label { font-size: 10px; fill: #9ca3af; font-family: inherit; }
+    .matrix-quadrant-label { font-size: 10px; fill: #9ca3af; font-family: inherit; font-weight: 500; }
+
+    /* Interactive matrix */
+    .stakeholder-circle { cursor: grab; transition: filter 0.2s, stroke-width 0.2s; }
+    .stakeholder-circle.dragging { transition: none !important; }
+    .stakeholder-circle:hover { filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0,0,0,0.1)); stroke-width: 0.8 !important; }
+    .stakeholder-circle:active { cursor: grabbing; }
+    .stakeholder-circle.selected { stroke: #2563eb; stroke-width: 0.5; filter: drop-shadow(0 2px 8px rgba(37,99,235,0.3)); }
+    input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 5px; background: #e5e7eb; outline: none; cursor: pointer; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #3b82f6; cursor: grab; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #3b82f6; cursor: grab; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    input[type="range"].attitude-slider { background: linear-gradient(to right, rgb(234,34,34), rgb(200,100,100), rgb(229,231,235), rgb(100,200,100), rgb(34,234,34)); }
+
+    /* Chat tab */
+    .chat-bubble-user { background: #2563eb; color: white; border-radius: 18px 18px 4px 18px; }
+    .chat-bubble-assistant { background: white; color: #111827; border-radius: 18px 18px 18px 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #f3f4f6; }
+    .chat-bubble-error { background: #fef2f2; color: #dc2626; border-radius: 18px 18px 18px 4px; border: 1px solid #fecaca; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .streaming-cursor::after { content: '▋'; display: inline-block; animation: blink 0.9s infinite; margin-left: 1px; font-size: 0.85em; }
+    .chat-input-bar { border-top: 1px solid #e5e7eb; background: white; }
+    .starter-chip { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 8px 14px; font-size: 13px; color: #374151; cursor: pointer; text-align: left; transition: all 0.15s; line-height: 1.4; }
+    .starter-chip:hover { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+
+    /* Transcript modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal-box { background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); width: 100%; max-width: 680px; max-height: 80vh; display: flex; flex-direction: column; }
+    .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Desktop nav -->
+<nav class="desktop-nav bg-white border-b border-gray-200 sticky top-0 z-40">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="flex items-center justify-between h-14">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 bg-blue-600 rounded" style="background: linear-gradient(135deg,#2563eb,#7c3aed)"></div>
+        <span id="project-title-desktop" class="font-semibold text-gray-900 text-sm">Stakeholder Intelligence</span>
+      </div>
+      <div class="flex gap-1">
+        <button onclick="switchTab('ask')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="ask">Ask</button>
+        <button onclick="switchTab('meetings')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="meetings">Meetings</button>
+        <button onclick="switchTab('stakeholders')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="stakeholders">Stakeholders</button>
+        <button onclick="switchTab('goals')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="goals">Goals</button>
+        <button onclick="switchTab('project')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="project">Project</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Main content -->
+<div class="max-w-5xl mx-auto px-4 md:px-6 py-6 main-content">
+
+  <!-- Loading state -->
+  <div id="loading" class="flex flex-col items-center justify-center py-24 text-gray-400">
+    <div class="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+    <p class="text-sm">Loading project data...</p>
+  </div>
+
+  <!-- Error state -->
+  <div id="error-state" class="hidden text-center py-24">
+    <div class="text-4xl mb-4">⚠️</div>
+    <p class="font-semibold text-gray-800 mb-2">Couldn't load data.json</p>
+    <p class="text-sm text-gray-500 max-w-sm mx-auto">This app needs to be served over HTTP to fetch data. Try running a local server: <code class="bg-gray-100 px-2 py-1 rounded text-xs">python3 -m http.server 8080</code> then open <code class="bg-gray-100 px-2 py-1 rounded text-xs">localhost:8080</code></p>
+  </div>
+
+  <!-- App content (hidden until data loads) -->
+  <div id="app-content" class="hidden">
+
+    <!-- ASK TAB -->
+    <div id="tab-ask" class="tab-content">
+      <div class="flex flex-col rounded-xl overflow-hidden" style="height:75vh;border:1px solid #e5e7eb;">
+
+        <!-- Setup state: no worker URL configured -->
+        <div id="chat-setup" class="hidden flex-1 flex flex-col items-center justify-center p-8 bg-gray-50 text-center">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style="background:linear-gradient(135deg,#2563eb,#7c3aed)">
+            <svg width="24" height="24" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h2 class="text-lg font-semibold text-gray-900 mb-2">Ask needs a backend</h2>
+          <p class="text-sm text-gray-500 max-w-sm leading-relaxed mb-6">This chat feature uses a Cloudflare Worker to keep your API key safe. Follow the setup guide to deploy it, then paste your worker URL below.</p>
+          <div class="flex gap-2 w-full max-w-md">
+            <input id="worker-url-input" type="url" placeholder="https://your-worker.workers.dev/chat"
+              class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onkeydown="if(event.key==='Enter') saveWorkerUrl()"/>
+            <button onclick="saveWorkerUrl()" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">Save</button>
+          </div>
+          <p class="text-xs text-gray-400 mt-3">See <code class="bg-gray-100 px-1 rounded">CHAT-SETUP.md</code> for full instructions</p>
+        </div>
+
+        <!-- Welcome state: worker configured, no messages yet -->
+        <div id="chat-welcome" class="hidden flex-1 flex flex-col items-center justify-center p-8 bg-gray-50 text-center">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style="background:linear-gradient(135deg,#2563eb,#7c3aed)">
+            <svg width="24" height="24" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h2 class="text-lg font-semibold text-gray-900 mb-1">Ask about this project</h2>
+          <p class="text-sm text-gray-500 mb-6">Powered by Claude. Questions, summaries, next steps.</p>
+          <div class="grid gap-2 w-full max-w-lg text-left">
+            <button class="starter-chip" onclick="submitStarterQuestion('Who are the most important stakeholders and why?')">Who are the most important stakeholders and why?</button>
+            <button class="starter-chip" onclick="submitStarterQuestion('What are the biggest risks I should act on immediately?')">What are the biggest risks I should act on immediately?</button>
+            <button class="starter-chip" onclick="submitStarterQuestion('What does Tom Okafor actually need from me to win his support?')">What does Tom Okafor actually need from me to win his support?</button>
+            <button class="starter-chip" onclick="submitStarterQuestion('Summarise the contradictions in what stakeholders have told me')">Summarise the contradictions in what stakeholders have told me</button>
+          </div>
+        </div>
+
+        <!-- Messages state: conversation in progress -->
+        <div id="chat-messages-area" class="hidden flex-1 overflow-y-auto p-5 bg-gray-50 space-y-4"></div>
+
+        <!-- Input bar (always visible once configured) -->
+        <div id="chat-input-bar" class="hidden chat-input-bar p-4">
+          <div class="flex gap-3 items-end max-w-3xl mx-auto">
+            <textarea id="chat-input" rows="1" placeholder="Ask anything about this project…"
+              class="flex-1 resize-none text-sm border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              style="max-height:120px;overflow-y:auto;"
+              onkeydown="handleChatKeydown(event)"
+              oninput="autoResizeTextarea(this)"></textarea>
+            <button id="chat-send-btn" onclick="sendChatMessage()"
+              class="flex-shrink-0 w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg width="18" height="18" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+          <p class="text-center text-xs text-gray-400 mt-2">
+            <span id="chat-worker-status">
+              Responses generated by Claude · <button onclick="resetWorkerUrl()" class="underline hover:text-gray-600">Change worker URL</button>
+            </span>
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MEETINGS TAB -->
+    <div id="tab-meetings" class="tab-content">
+      <div class="flex rounded-xl overflow-hidden" style="min-height:70vh;border:1px solid #e5e7eb;">
+        <div id="meetings-filter-panel" class="w-72 flex-shrink-0 bg-white border-r border-gray-200 p-5 overflow-auto"></div>
+        <div class="flex-1 p-5 overflow-auto bg-gray-50">
+          <div class="mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">Meetings & Notes</h2>
+            <p id="meetings-subtitle" class="text-sm text-gray-500 mt-1"></p>
+          </div>
+          <div id="meetings-list" class="space-y-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAKEHOLDERS TAB -->
+    <div id="tab-stakeholders" class="tab-content">
+      <div id="interactive-matrix-slot"></div>
+    </div>
+
+    <!-- GOALS TAB -->
+    <div id="tab-goals" class="tab-content">
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-gray-900">Goals</h2>
+        <p class="text-sm text-gray-500 mt-1">Project, business, and personal goals for this initiative.</p>
+      </div>
+      <div id="goals-content" class="space-y-4"></div>
+    </div>
+
+    <!-- PROJECT TAB -->
+    <div id="tab-project" class="tab-content">
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-gray-900">Project Synthesis</h2>
+        <p class="text-sm text-gray-500 mt-1">Stakeholder map, contradictions, hypotheses, and recommendations.</p>
+      </div>
+      <div id="project-content" class="space-y-4"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Mobile bottom nav -->
+<div class="mobile-bottom-bar">
+  <button onclick="switchTab('ask')" data-tab="ask">
+    <span class="tab-indicator"></span>
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Ask
+  </button>
+  <button onclick="switchTab('meetings')" data-tab="meetings">
+    <span class="tab-indicator"></span>
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+    Meetings
+  </button>
+  <button onclick="switchTab('stakeholders')" data-tab="stakeholders">
+    <span class="tab-indicator"></span>
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg>
+    People
+  </button>
+  <button onclick="switchTab('goals')" data-tab="goals">
+    <span class="tab-indicator"></span>
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    Goals
+  </button>
+  <button onclick="switchTab('project')" data-tab="project">
+    <span class="tab-indicator"></span>
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+    Project
+  </button>
+</div>
+
+<!-- Transcript modal -->
+<div id="transcript-modal" style="display:none" class="modal-overlay" onclick="closeTranscriptModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <h3 id="modal-title" class="text-base font-semibold text-gray-900"></h3>
+        <p id="modal-date" class="text-xs text-gray-500 mt-0.5"></p>
+      </div>
+      <button onclick="closeTranscriptModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="modal-content" class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+  let appData = null;
+  let currentTab = 'meetings';
+  let openAccordions = new Set();
+  let meetingFilters = new Set();
+
+  // ===== TAB SWITCHING =====
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+
+    document.querySelectorAll('.desktop-tab').forEach(btn => {
+      btn.classList.toggle('bg-blue-50', btn.dataset.tab === tab);
+      btn.classList.toggle('text-blue-700', btn.dataset.tab === tab);
+      btn.classList.toggle('font-semibold', btn.dataset.tab === tab);
+      btn.classList.toggle('text-gray-600', btn.dataset.tab !== tab);
+    });
+
+    document.querySelectorAll('.mobile-bottom-bar button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+  }
+
+  // ===== ACCORDION =====
+  function toggleAccordion(id) {
+    const body = document.getElementById('acc-body-' + id);
+    const chevron = document.getElementById('acc-chevron-' + id);
+    if (!body) return;
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    if (chevron) chevron.classList.toggle('open', !isOpen);
+  }
+
+  function showTranscriptModal(id) {
+    const m = appData.meetings.find(m => m.id === id);
+    if (!m) return;
+    document.getElementById('modal-title').textContent = m.title;
+    document.getElementById('modal-date').textContent = formatDate(m.date);
+    document.getElementById('modal-content').textContent = m.raw;
+    document.getElementById('transcript-modal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeTranscriptModal(event) {
+    if (event && event.target !== document.getElementById('transcript-modal')) return;
+    document.getElementById('transcript-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeTranscriptModal();
+  });
+
+  // ===== HELPERS =====
+  function formatDate(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function getSupportColor(support) {
+    const map = { 'Supportive': '#16a34a', 'Conditional': '#ea580c', 'Opposed': '#dc2626' };
+    return map[support] || '#6b7280';
+  }
+
+  function getSupportBadgeClass(support) {
+    const map = { 'Supportive': 'badge-green', 'Conditional': 'badge-high', 'Opposed': 'badge-critical' };
+    return map[support] || 'badge-gray';
+  }
+
+  function getSeverityClass(severity) {
+    const map = { 'Critical': 'badge-critical', 'High': 'badge-high', 'Medium': 'badge-medium', 'Low': 'badge-low' };
+    return map[severity] || 'badge-gray';
+  }
+
+  function getConfidenceClass(confidence) {
+    const map = { 'High': 'badge-green', 'Medium': 'badge-medium', 'Low': 'badge-gray' };
+    return map[confidence] || 'badge-gray';
+  }
+
+  function getStatusClass(status) {
+    if (status.startsWith('Active')) return 'badge-blue';
+    if (status === 'Validated') return 'badge-green';
+    if (status === 'Disproved') return 'badge-gray';
+    return 'badge-gray';
+  }
+
+  function getPriorityClass(priority) {
+    const map = { 'High': 'badge-critical', 'Medium': 'badge-high', 'Low': 'badge-gray' };
+    return map[priority] || 'badge-gray';
+  }
+
+  function stakeholderName(id) {
+    if (!appData) return id;
+    const s = appData.stakeholders.find(s => s.id === id);
+    return s ? s.name : id;
+  }
+
+  function chevronSVG(id) {
+    return `<svg id="acc-chevron-${id}" class="chevron w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>`;
+  }
+
+  function sectionRow(label, id) {
+    return `<div class="accordion-header flex items-center justify-between px-5 py-3 border-t border-gray-50" onclick="toggleAccordion('${id}')">
+      <span class="text-sm font-medium text-gray-700">${label}</span>
+      ${chevronSVG(id)}
+    </div>`;
+  }
+
+  function itemList(items) {
+    if (!items || !items.length) return '';
+    return items.map(item => {
+      if (typeof item === 'string') return `<li class="text-sm text-gray-700 leading-relaxed">${item}</li>`;
+      return `<li class="mb-3"><p class="text-sm font-medium text-gray-800">${item.title}</p><p class="text-sm text-gray-600 mt-0.5 leading-relaxed">${item.detail}</p></li>`;
+    }).join('');
+  }
+
+  function quoteList(quotes) {
+    if (!quotes || !quotes.length) return '';
+    return quotes.map(q => `<blockquote class="border-l-2 border-blue-200 pl-3 text-sm text-gray-700 italic leading-relaxed">"${q}"</blockquote>`).join('<div class="my-2"></div>');
+  }
+
+  // ===== RENDER MEETINGS =====
+  function renderMeetings() {
+    // Initialise all stakeholders as checked
+    meetingFilters = new Set(appData.stakeholders.map(s => s.id));
+
+    // Render filter sidebar
+    const panel = document.getElementById('meetings-filter-panel');
+    if (panel) {
+      panel.innerHTML = `<div>
+        <h3 class="text-xs font-semibold text-gray-500 mb-4 uppercase tracking-wide">Filters</h3>
+        <div class="space-y-0.5">
+          ${appData.stakeholders.map(s => `
+            <label class="flex items-center gap-3 cursor-pointer px-2 py-1.5 rounded-lg hover:bg-gray-50">
+              <input type="checkbox" checked onchange="toggleMeetingFilter('${s.id}')"
+                class="w-4 h-4 rounded border-gray-300 cursor-pointer accent-blue-600">
+              <span class="text-sm text-gray-700">${s.name}</span>
+            </label>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    renderFilteredMeetingsList();
+  }
+
+  function renderFilteredMeetingsList() {
+    const all = [...appData.meetings].sort((a, b) => b.date.localeCompare(a.date));
+    const meetings = all.filter(m =>
+      !m.attendees.length || m.attendees.some(a => meetingFilters.has(a))
+    );
+
+    const subtitleEl = document.getElementById('meetings-subtitle');
+    if (subtitleEl) subtitleEl.textContent = meetings.length === all.length
+      ? `${all.length} meetings recorded`
+      : `${meetings.length} of ${all.length} meetings`;
+
+    const html = meetings.map(m => {
+      const id = m.id;
+      const attendeeNames = m.attendees.map(a => `<span class="chip">${stakeholderName(a)}</span>`).join('');
+      const dateStr = formatDate(m.date);
+      const typeLabel = m.type === 'interview' ? 'Interview' : m.type === 'note' ? 'Note' : 'Meeting';
+      return `<div class="card overflow-hidden">
+        <div class="meeting-row px-5 py-4 flex items-start gap-4" onclick="toggleAccordion('${id}')">
+          <div class="flex-shrink-0 mt-0.5"><span class="badge badge-blue">${dateStr}</span></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <p class="text-sm font-semibold text-gray-900">${m.title}</p>
+              ${chevronSVG(id)}
+            </div>
+            <div class="flex flex-wrap items-center gap-1 mt-1.5">
+              ${attendeeNames}
+              <span class="chip text-gray-400">${typeLabel}</span>
+            </div>
+            <p class="text-sm text-gray-500 mt-2 leading-relaxed">${m.summary}</p>
+          </div>
+        </div>
+        <div id="acc-body-${id}" class="accordion-body border-t border-gray-100">
+          <div class="px-5 py-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Synthesis</p>
+            <p class="text-sm text-gray-700 leading-relaxed">${m.synthesis}</p>
+          </div>
+          <div class="px-5 pb-4">
+            <button onclick="showTranscriptModal('${id}')" class="text-xs text-blue-600 font-medium hover:text-blue-800 transition-colors">Show raw transcript</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('') || '<p class="text-sm text-gray-400 text-center py-12">No meetings match the current filters.</p>';
+
+    document.getElementById('meetings-list').innerHTML = html;
+  }
+
+  window.toggleMeetingFilter = function(id) {
+    if (meetingFilters.has(id)) meetingFilters.delete(id);
+    else meetingFilters.add(id);
+    renderFilteredMeetingsList();
+  };
+
+  // ===== RENDER STAKEHOLDERS =====
+  function renderStakeholders() {
+    document.getElementById('stakeholders-subtitle').textContent = `${appData.stakeholders.length} stakeholders`;
+
+    const html = appData.stakeholders.map(s => {
+      const id = 'sh-' + s.id;
+      const matrixEntry = appData.project.stakeholderMatrix.find(m => m.stakeholderId === s.id);
+      const support = matrixEntry ? matrixEntry.support : '';
+      const influence = matrixEntry ? matrixEntry.influence : '';
+
+      const meetingLinks = s.meetings.map(mid => {
+        const m = appData.meetings.find(m => m.id === mid);
+        return m ? `<div class="flex items-center gap-2 py-1">
+          <span class="badge badge-blue">${formatDate(m.date)}</span>
+          <span class="text-sm text-gray-700 cursor-pointer hover:text-blue-600" onclick="goToMeeting('${mid}')">${m.title}</span>
+        </div>` : '';
+      }).join('');
+
+      // Build sections
+      const sections = [
+        { key: 'overview', label: 'Overview', content: () => {
+          if (!s.overview || !s.overview.length) return '';
+          return s.overview.map(p => `<p class="text-sm text-gray-700 leading-relaxed mb-3">${p}</p>`).join('');
+        }},
+        { key: 'factcard', label: 'Fact Card', content: () => `<p class="text-sm text-gray-700 leading-relaxed">${s.factCard}</p>` },
+        { key: 'goals', label: 'Goals', content: () => {
+          if (!s.goals) return '';
+          return `<p class="text-sm text-gray-600 leading-relaxed mb-3">${s.goals.summary}</p>
+            <ul class="space-y-1 list-none">${itemList(s.goals.items)}</ul>
+            ${s.goals.quotes && s.goals.quotes.length ? `<div class="mt-3 space-y-2">${quoteList(s.goals.quotes)}</div>` : ''}`;
+        }},
+        { key: 'needs', label: 'Needs', content: () => {
+          if (!s.needs) return '';
+          return `<p class="text-sm text-gray-600 leading-relaxed mb-3">${s.needs.summary}</p>
+            <ul class="space-y-1 list-none">${itemList(s.needs.items)}</ul>
+            ${s.needs.quotes && s.needs.quotes.length ? `<div class="mt-3 space-y-2">${quoteList(s.needs.quotes)}</div>` : ''}`;
+        }},
+        { key: 'painpoints', label: 'Pain Points', content: () => {
+          if (!s.painPoints) return '';
+          return `<p class="text-sm text-gray-600 leading-relaxed mb-3">${s.painPoints.summary}</p>
+            <ul class="space-y-1 list-none">${itemList(s.painPoints.items)}</ul>
+            ${s.painPoints.quotes && s.painPoints.quotes.length ? `<div class="mt-3 space-y-2">${quoteList(s.painPoints.quotes)}</div>` : ''}`;
+        }},
+        { key: 'hidden', label: '🔒 Hidden Agendas', content: () => {
+          if (!s.hiddenAgendas) return '';
+          return `<p class="text-sm text-gray-600 leading-relaxed mb-3">${s.hiddenAgendas.summary}</p>
+            <ul class="space-y-1 list-none">${itemList(s.hiddenAgendas.items)}</ul>
+            ${s.hiddenAgendas.quotes && s.hiddenAgendas.quotes.length ? `<div class="mt-3 space-y-2">${quoteList(s.hiddenAgendas.quotes)}</div>` : ''}`;
+        }, private: true },
+        { key: 'quotes', label: 'Key Quotes', content: () => {
+          if (!s.keyQuotes) return '';
+          return `${s.keyQuotes.featured ? `<blockquote class="text-sm font-medium text-gray-800 italic border-l-3 border-blue-400 pl-4 mb-4 leading-relaxed" style="border-left: 3px solid #2563eb; padding-left: 16px;">"${s.keyQuotes.featured}"</blockquote>` : ''}
+            <div class="space-y-2">${quoteList(s.keyQuotes.all)}</div>`;
+        }},
+        { key: 'recs', label: 'Recommendations', content: () => {
+          if (!s.recommendations) return '';
+          let html = `<p class="text-sm text-gray-600 leading-relaxed mb-3">${s.recommendations.summary}</p>`;
+          if (s.recommendations.immediate && s.recommendations.immediate.length) {
+            html += `<p class="text-xs font-semibold uppercase tracking-wide text-red-500 mb-1">Immediate</p><ul class="list-disc list-inside space-y-1 mb-3">${s.recommendations.immediate.map(r => `<li class="text-sm text-gray-700">${r}</li>`).join('')}</ul>`;
+          }
+          if (s.recommendations.ongoing && s.recommendations.ongoing.length) {
+            html += `<p class="text-xs font-semibold uppercase tracking-wide text-blue-500 mb-1">Ongoing</p><ul class="list-disc list-inside space-y-1 mb-3">${s.recommendations.ongoing.map(r => `<li class="text-sm text-gray-700">${r}</li>`).join('')}</ul>`;
+          }
+          if (s.recommendations.risks && s.recommendations.risks.length) {
+            html += `<p class="text-xs font-semibold uppercase tracking-wide text-orange-500 mb-1">Risks to watch</p><ul class="list-disc list-inside space-y-1">${s.recommendations.risks.map(r => `<li class="text-sm text-gray-700">${r}</li>`).join('')}</ul>`;
+          }
+          return html;
+        }},
+        { key: 'meetings-att', label: 'Meetings Attended', content: () => meetingLinks || '<p class="text-sm text-gray-400">No meetings recorded yet.</p>' }
+      ];
+
+      const sectionsHtml = sections.map(sec => {
+        const secId = id + '-' + sec.key;
+        const isPrivate = sec.private;
+        return `<div class="${isPrivate ? 'private-section' : ''}">
+          <div class="accordion-header flex items-center justify-between px-5 py-3 border-t border-gray-100" onclick="toggleAccordion('${secId}')">
+            <span class="text-sm font-medium ${isPrivate ? 'text-yellow-800' : 'text-gray-700'}">${sec.label}</span>
+            ${chevronSVG(secId)}
+          </div>
+          <div id="acc-body-${secId}" class="accordion-body px-5 py-4">
+            ${sec.content()}
+          </div>
+        </div>`;
+      }).join('');
+
+      return `<div class="card">
+        <div class="stakeholder-row accordion-header px-5 py-4 flex items-start gap-4" onclick="toggleAccordion('${id}')">
+          <div class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-semibold" style="background: linear-gradient(135deg, #2563eb, #7c3aed)">
+            ${s.name.split(' ').map(n => n[0]).join('').slice(0,2)}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <p class="text-sm font-semibold text-gray-900">${s.name}</p>
+                <p class="text-xs text-gray-500 mt-0.5">${s.role}</p>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                ${support ? `<span class="badge ${getSupportBadgeClass(support)}">${support}</span>` : ''}
+                ${chevronSVG(id)}
+              </div>
+            </div>
+            <p class="text-sm text-gray-500 mt-2 leading-relaxed">${s.summary}</p>
+          </div>
+        </div>
+        <div id="acc-body-${id}" class="accordion-body">
+          ${sectionsHtml}
+        </div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('stakeholders-list').innerHTML = html;
+  }
+
+  function goToMeeting(meetingId) {
+    switchTab('meetings');
+    setTimeout(() => {
+      const body = document.getElementById('acc-body-' + meetingId);
+      const chevron = document.getElementById('acc-chevron-' + meetingId);
+      if (body) { body.classList.add('open'); if (chevron) chevron.classList.add('open'); }
+      const el = document.querySelector(`[onclick="toggleAccordion('${meetingId}')"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+
+  // ===== RENDER GOALS =====
+  function renderGoals() {
+    const g = appData.goals;
+    const sections = [
+      { title: 'Project Goals', content: g.project, icon: '🎯', color: 'blue' },
+      { title: 'Business Goals', content: g.business, icon: '🏢', color: 'purple' },
+      { title: 'Personal Goals', content: g.personal, icon: '⭐', color: 'green' }
+    ];
+
+    const html = sections.map(s => `
+      <div class="card p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="text-xl">${s.icon}</span>
+          <h3 class="text-base font-semibold text-gray-900">${s.title}</h3>
+        </div>
+        <p class="text-sm text-gray-700 leading-relaxed">${s.content}</p>
+      </div>`).join('');
+
+    document.getElementById('goals-content').innerHTML = html;
+  }
+
+  // ===== RENDER PROJECT =====
+  function renderProject() {
+    const { stakeholderMatrix, contradictions, hypotheses, recommendations } = appData.project;
+
+    // Sort contradictions by severity
+    const sevOrder = { 'Critical': 0, 'High': 1, 'Medium': 2, 'Low': 3 };
+    const sortedContradictions = [...contradictions].sort((a,b) => (sevOrder[a.severity]||9) - (sevOrder[b.severity]||9));
+    const sortedRecommendations = [...recommendations].sort((a,b) => (sevOrder[a.priority]||9) - (sevOrder[b.priority]||9));
+
+
+    // --- CONTRADICTIONS ---
+    const contradictionsHtml = sortedContradictions.map(c => {
+      const id = 'proj-c-' + c.id;
+      const stakeChips = c.stakeholders.map(sid => `<span class="chip">${stakeholderName(sid)}</span>`).join('');
+      return `<div class="border border-gray-100 rounded-lg overflow-hidden">
+        <div class="accordion-header flex items-start gap-3 px-4 py-3" onclick="toggleAccordion('${id}')">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="badge ${getSeverityClass(c.severity)}">${c.severity}</span>
+              <span class="text-sm font-medium text-gray-800">${c.title}</span>
+            </div>
+            <div class="flex flex-wrap mt-1.5">${stakeChips}</div>
+          </div>
+          ${chevronSVG(id)}
+        </div>
+        <div id="acc-body-${id}" class="accordion-body px-4 pb-4 bg-gray-50">
+          <p class="text-sm text-gray-700 leading-relaxed mb-2">${c.description}</p>
+          <div class="mt-2 p-3 bg-orange-50 rounded border border-orange-100">
+            <p class="text-xs font-semibold text-orange-700 mb-1">Implication</p>
+            <p class="text-sm text-orange-900 leading-relaxed">${c.implication}</p>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // --- HYPOTHESES ---
+    const hypothesesHtml = hypotheses.map(h => {
+      const id = 'proj-h-' + h.id;
+      return `<div class="border border-gray-100 rounded-lg overflow-hidden">
+        <div class="accordion-header flex items-start gap-3 px-4 py-3" onclick="toggleAccordion('${id}')">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <span class="badge ${getStatusClass(h.status)}">${h.status}</span>
+              <span class="badge ${getConfidenceClass(h.confidence)}">${h.confidence} confidence</span>
+            </div>
+            <p class="text-sm text-gray-800 leading-relaxed">${h.statement}</p>
+          </div>
+          ${chevronSVG(id)}
+        </div>
+        <div id="acc-body-${id}" class="accordion-body px-4 pb-4 bg-gray-50">
+          <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Evidence</p>
+          <p class="text-sm text-gray-700 leading-relaxed">${h.evidence}</p>
+        </div>
+      </div>`;
+    }).join('');
+
+    // --- RECOMMENDATIONS ---
+    const recommendationsHtml = sortedRecommendations.map(r => {
+      const id = 'proj-r-' + r.id;
+      return `<div class="border border-gray-100 rounded-lg overflow-hidden">
+        <div class="accordion-header flex items-start gap-3 px-4 py-3" onclick="toggleAccordion('${id}')">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="badge ${getPriorityClass(r.priority)}">${r.priority}</span>
+            </div>
+            <p class="text-sm font-semibold text-gray-800">${r.action}</p>
+          </div>
+          ${chevronSVG(id)}
+        </div>
+        <div id="acc-body-${id}" class="accordion-body px-4 pb-4 bg-gray-50">
+          <p class="text-sm text-gray-700 leading-relaxed mb-3">${r.rationale}</p>
+          <div class="p-3 bg-red-50 rounded border border-red-100">
+            <p class="text-xs font-semibold text-red-600 mb-1">Risk if ignored</p>
+            <p class="text-sm text-red-800 leading-relaxed">${r.riskIfIgnored}</p>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Assemble project sections
+    const sections = [
+      { title: `Contradictions (${contradictions.length})`, id: 'proj-contradictions', content: `<div class="space-y-2">${contradictionsHtml}</div>` },
+      { title: `Hypotheses (${hypotheses.length})`, id: 'proj-hypotheses', content: `<div class="space-y-2">${hypothesesHtml}</div>` },
+      { title: `Recommendations (${recommendations.length})`, id: 'proj-recs', content: `<div class="space-y-2">${recommendationsHtml}</div>` }
+    ];
+
+    const html = sections.map(sec => `
+      <div class="card">
+        <div class="accordion-header flex items-center justify-between px-5 py-4" onclick="toggleAccordion('${sec.id}')">
+          <h3 class="text-base font-semibold text-gray-900">${sec.title}</h3>
+          ${chevronSVG(sec.id)}
+        </div>
+        <div id="acc-body-${sec.id}" class="accordion-body open px-5 pb-5">
+          ${sec.content}
+        </div>
+      </div>`).join('');
+
+    document.getElementById('project-content').innerHTML = html;
+    // Open chevrons for project sections that start open
+    sections.forEach(sec => {
+      const chev = document.getElementById('acc-chevron-' + sec.id);
+      if (chev) chev.classList.add('open');
+    });
+  }
+
+  // ===== INTERACTIVE MATRIX =====
+  let matrixPositions = {};
+  let matrixProfileById = {};
+  let matrixSelectedId = null;
+  let matrixCurrentSection = 'matrix';
+  let matrixDraggedId = null;
+
+  function getAttitudeColor(attitude) {
+    if (attitude > 0) {
+      const r = attitude / 100;
+      return `rgb(${Math.round(229+(34-229)*r)},${Math.round(231+(234-231)*r)},${Math.round(235+(34-235)*r)})`;
+    } else if (attitude < 0) {
+      const r = Math.abs(attitude) / 100;
+      return `rgb(${Math.round(229+(234-229)*r)},${Math.round(231+(34-231)*r)},${Math.round(235+(34-235)*r)})`;
+    }
+    return 'rgb(229,231,235)';
+  }
+  function getAttitudeLabel(a) {
+    if (a>=70) return 'Very Positive'; if (a>=40) return 'Positive'; if (a>=10) return 'Somewhat Positive';
+    if (a>=-10) return 'Neutral'; if (a>=-40) return 'Somewhat Negative'; if (a>=-70) return 'Negative';
+    return 'Very Negative';
+  }
+  function getMatrixInfluenceLabel(v) { return v>=70?'High':v>=40?'Medium':'Low'; }
+  function getMatrixInterestLabel(v)  { return v>=70?'High':v>=40?'Medium':'Low'; }
+
+  function buildMatrixData() {
+    const infMap = {'High':82,'Medium':50,'Low':18};
+    const intMap = {'Supportive':78,'Conditional':50,'Opposed':22};
+    const attMap = {'Supportive':70,'Conditional':0,'Opposed':-70};
+    matrixProfileById = {};
+    appData.stakeholders.forEach(s => { matrixProfileById[s.id] = s; });
+    matrixPositions = {};
+    (appData.project.stakeholderMatrix||[]).forEach((entry, idx) => {
+      const jx = ((idx%3)-1)*8, jy = (Math.floor(idx/3)%2)*6;
+      matrixPositions[entry.stakeholderId] = {
+        influence: Math.min(94, Math.max(6, (infMap[entry.influence]||50)+jy)),
+        interest:  Math.min(94, Math.max(6, (intMap[entry.support]||50)+jx)),
+        attitude:  attMap[entry.support]!==undefined ? attMap[entry.support] : 0
+      };
+    });
+  }
+
+  function renderMatrixSVGContent() {
+    const mob = window.innerWidth < 768;
+    const cR=mob?4:2, cRS=mob?5:2.5, fS=mob?3.5:2.5, tO=mob?7:4.5;
+    const svgH = mob ? '55vh' : '50vh';
+    const circles = Object.entries(matrixPositions).map(([id, pos]) => {
+      const x=pos.interest, y=100-pos.influence;
+      const color=getAttitudeColor(pos.attitude);
+      const isSel=matrixSelectedId===id;
+      const p=matrixProfileById[id]; if(!p) return '';
+      return `<g><circle class="stakeholder-circle${isSel?' selected':''}" cx="${x}" cy="${y}" r="${isSel?cRS:cR}" fill="${color}" stroke="${isSel?'#2563eb':'white'}" stroke-width="${isSel?'1':'0.5'}" data-matrix-id="${id}" onmousedown="matrixStartDragging(event,'${id}')" ontouchstart="matrixStartDragging(event,'${id}')" style="cursor:grab;touch-action:none;"/><text x="${x}" y="${y-tO}" text-anchor="middle" font-size="${fS}" fill="#111827" font-weight="600" style="pointer-events:none;user-select:none;">${p.name.split(' ')[0]}</text></g>`;
+    }).join('');
+    return `<div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+      <div class="mb-3 grid grid-cols-2 gap-2">
+        <div class="text-center p-2 bg-gray-50 rounded-lg border border-gray-200"><div class="text-xs font-bold text-gray-700 tracking-wide">KEEP SATISFIED</div><div class="text-xs text-gray-500 mt-0.5">High Influence, Low Interest</div></div>
+        <div class="text-center p-2 bg-gray-50 rounded-lg border border-gray-200"><div class="text-xs font-bold text-gray-700 tracking-wide">MANAGE CLOSELY</div><div class="text-xs text-gray-500 mt-0.5">High Influence, High Interest</div></div>
+      </div>
+      <svg id="interactiveMatrixSvg" viewBox="0 0 100 100" class="w-full" style="max-height:${svgH};touch-action:none;" onmousemove="matrixHandleDrag(event)" onmouseup="matrixStopDragging()" onmouseleave="matrixStopDragging()" ontouchmove="matrixHandleDrag(event)" ontouchend="matrixStopDragging()" ontouchcancel="matrixStopDragging()">
+        <rect x="0" y="0" width="50" height="50" fill="#F9FAFB"/><rect x="50" y="0" width="50" height="50" fill="#F3F4F6"/>
+        <rect x="0" y="50" width="50" height="50" fill="#E5E7EB"/><rect x="50" y="50" width="50" height="50" fill="#D1D5DB"/>
+        <line x1="50" y1="0" x2="50" y2="100" stroke="#9CA3AF" stroke-width="0.25"/>
+        <line x1="0" y1="50" x2="100" y2="50" stroke="#9CA3AF" stroke-width="0.25"/>
+        <line x1="0" y1="100" x2="100" y2="100" stroke="#374151" stroke-width="0.4"/>
+        <line x1="0" y1="0" x2="0" y2="100" stroke="#374151" stroke-width="0.4"/>
+        <text x="50" y="105" text-anchor="middle" font-size="3.2" fill="#111827" font-weight="700" letter-spacing="0.3">INTEREST / ENGAGEMENT &#8594;</text>
+        <text x="-3" y="50" text-anchor="middle" font-size="3.2" fill="#111827" font-weight="700" letter-spacing="0.3" transform="rotate(-90,-3,50)">POWER / INFLUENCE &#8593;</text>
+        ${circles}
+      </svg>
+      <div class="mt-3 grid grid-cols-2 gap-2">
+        <div class="text-center p-2 bg-gray-50 rounded-lg border border-gray-200"><div class="text-xs font-bold text-gray-700 tracking-wide">MONITOR</div><div class="text-xs text-gray-500 mt-0.5">Low Influence, Low Interest</div></div>
+        <div class="text-center p-2 bg-gray-50 rounded-lg border border-gray-200"><div class="text-xs font-bold text-gray-700 tracking-wide">KEEP INFORMED</div><div class="text-xs text-gray-500 mt-0.5">Low Influence, High Interest</div></div>
+      </div>
+      <div class="mt-3 flex items-center justify-center">
+        <div class="bg-gray-50 px-4 py-2 rounded-lg border border-gray-200 flex items-center gap-4">
+          <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full" style="background:${getAttitudeColor(80)}"></div><span class="text-sm text-gray-700 font-medium">Positive</span></div>
+          <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full" style="background:${getAttitudeColor(0)}"></div><span class="text-sm text-gray-700 font-medium">Neutral</span></div>
+          <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full" style="background:${getAttitudeColor(-80)}"></div><span class="text-sm text-gray-700 font-medium">Negative</span></div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderMatrixControlPanel(id) {
+    if (!id || !matrixPositions[id]) {
+      return `<div class="flex flex-col items-center justify-center h-full text-center py-12">
+        <svg class="w-12 h-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+        <p class="text-gray-500 font-medium text-sm">Select a stakeholder</p>
+        <p class="text-xs text-gray-400 mt-1">Click or drag any dot on the matrix</p>
+      </div>`;
+    }
+    const pos = matrixPositions[id];
+    const profile = matrixProfileById[id];
+    const contCount = (appData.project.contradictions||[]).filter(c => (c.stakeholders||[]).includes(id)).length;
+    const navItems = [
+      {key:'matrix',label:'Matrix'},{key:'overview',label:'Summary'},{key:'goals',label:'Goals'},
+      {key:'needs',label:'Needs'},{key:'painPoints',label:'Pain Points'},
+      {key:'hiddenAgendas',label:'Hidden Agendas',isPrivate:true},{key:'keyQuotes',label:'Key Quotes'},
+      {key:'contradictions',label:'Contradictions',badge:contCount>0?contCount:null},
+      {key:'recommendations',label:'Recommendations'},
+    ];
+    const navHtml = navItems.filter(item => item.key==='matrix' || profile[item.key] || (item.key==='contradictions'&&contCount>0)).map(item => {
+      const isActive = matrixCurrentSection === item.key;
+      const privateTag = item.isPrivate ? ' <span class="text-xs text-gray-400">(Private)</span>' : '';
+      const badgeHtml = item.badge ? `<span class="text-xs font-semibold bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full border border-orange-200">${item.badge}</span>` : '';
+      return `<a onclick="matrixSetSection('${item.key}')" class="flex items-center justify-between px-3 py-2 rounded-lg text-sm cursor-pointer transition-all ${isActive?'bg-blue-50 text-blue-700 font-semibold shadow-sm':'text-gray-700 hover:bg-gray-50'}"><span>${item.label}${privateTag}</span>${badgeHtml}</a>`;
+    }).join('');
+    const selectOpts = Object.entries(matrixProfileById).map(([sid, s]) => `<option value="${sid}"${sid===id?' selected':''}>${s.name}</option>`).join('');
+    const keyInfo = profile.keyDynamic || profile.summary || '';
+    return `<div>
+      <div class="mb-5">
+        <select onchange="matrixSelectStakeholder(this.value)" class="font-bold text-gray-900 bg-white rounded-lg px-3 py-1.5 border border-gray-200 outline-none cursor-pointer w-full text-sm" style="-webkit-appearance:none;-moz-appearance:none;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:14px;">${selectOpts}</select>
+        <p class="text-xs text-gray-500 mt-1">${profile.role}</p>
+        ${keyInfo ? `<div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"><p class="text-xs text-blue-800 leading-relaxed">${keyInfo}</p></div>` : ''}
+      </div>
+      <div class="space-y-5 mb-6">
+        <div>
+          <div class="flex items-center justify-between mb-2"><label class="text-sm font-semibold text-gray-700">Power / Influence</label><span class="text-sm font-medium text-gray-900">${getMatrixInfluenceLabel(pos.influence)}</span></div>
+          <input type="range" min="0" max="100" value="${pos.influence}" class="w-full" oninput="matrixUpdateSliderLive('${id}','influence',this.value)" onchange="matrixUpdateSliderFinal('${id}','influence',this.value)"/>
+          <div class="flex justify-between text-xs text-gray-500 mt-1"><span>Low</span><span>Medium</span><span>High</span></div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-2"><label class="text-sm font-semibold text-gray-700">Interest / Engagement</label><span class="text-sm font-medium text-gray-900">${getMatrixInterestLabel(pos.interest)}</span></div>
+          <input type="range" min="0" max="100" value="${pos.interest}" class="w-full" oninput="matrixUpdateSliderLive('${id}','interest',this.value)" onchange="matrixUpdateSliderFinal('${id}','interest',this.value)"/>
+          <div class="flex justify-between text-xs text-gray-500 mt-1"><span>Low</span><span>Medium</span><span>High</span></div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-2"><label class="text-sm font-semibold text-gray-700">Attitude</label><span class="text-sm font-medium text-gray-900">${getAttitudeLabel(pos.attitude)}</span></div>
+          <input type="range" min="-100" max="100" value="${pos.attitude}" class="w-full attitude-slider" oninput="matrixUpdateSliderLive('${id}','attitude',this.value)" onchange="matrixUpdateSliderFinal('${id}','attitude',this.value)"/>
+          <div class="flex justify-between text-xs text-gray-500 mt-1"><span>Negative</span><span>Neutral</span><span>Positive</span></div>
+        </div>
+      </div>
+      <div>
+        <h3 class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Insights</h3>
+        <nav class="space-y-0.5">${navHtml}</nav>
+      </div>
+    </div>`;
+  }
+
+  function renderMatrixProfileSection(id, key) {
+    const profile = matrixProfileById[id];
+    if (!profile) return '';
+    const data = profile[key];
+    if (key === 'contradictions') {
+      const relevant = (appData.project.contradictions||[]).filter(c => (c.stakeholders||[]).includes(id));
+      if (!relevant.length) return '<p class="text-sm text-gray-500">No contradictions found.</p>';
+      return relevant.map(c => `<div class="border border-gray-100 rounded-xl p-4 mb-3 shadow-sm">
+        <div class="flex items-start justify-between mb-2"><h3 class="font-semibold text-gray-900 text-sm">${c.title||c.theme||''}</h3><span class="badge ${getSeverityClass(c.severity)}">${c.severity}</span></div>
+        <p class="text-sm text-gray-700 leading-relaxed mb-2">${c.description||''}</p>
+        ${(c.implication||c.implications)?`<div class="text-sm text-gray-700 bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r"><span class="font-semibold">Implications: </span>${c.implication||c.implications}</div>`:''}
+      </div>`).join('');
+    }
+    if (key==='overview' && Array.isArray(data)) return '<div class="space-y-4">'+data.map(p=>`<p class="text-sm text-gray-700 leading-relaxed">${p}</p>`).join('')+'</div>';
+    if (key==='keyQuotes' && data && data.featured) return `<div class="space-y-4">${data.summary?`<p class="text-sm text-gray-700 leading-relaxed">${data.summary}</p>`:''}<div class="space-y-3">${(data.all||[]).map(q=>`<blockquote class="text-sm text-gray-700 italic pl-4 py-2.5 pr-4 rounded-r-xl bg-blue-50" style="border-left:3px solid #93c5fd">&ldquo;${q}&rdquo;</blockquote>`).join('')}</div></div>`;
+    if (key==='recommendations' && data && data.summary) return `<div class="space-y-4"><p class="text-sm text-gray-700 leading-relaxed">${data.summary}</p>${data.immediate&&data.immediate.length?`<div><div class="text-xs font-semibold text-red-700 mb-2">IMMEDIATE</div><ul class="space-y-1">${data.immediate.map(i=>`<li class="text-sm text-gray-700 pl-3 border-l-2 border-red-300">${i}</li>`).join('')}</ul></div>`:''} ${data.ongoing&&data.ongoing.length?`<div><div class="text-xs font-semibold text-yellow-700 mb-2">ONGOING</div><ul class="space-y-1">${data.ongoing.map(i=>`<li class="text-sm text-gray-700 pl-3 border-l-2 border-yellow-300">${i}</li>`).join('')}</ul></div>`:''} ${data.risks&&data.risks.length?`<div><div class="text-xs font-semibold text-gray-700 mb-2">RISKS</div><ul class="space-y-1">${data.risks.map(i=>`<li class="text-sm text-gray-700 pl-3 border-l-2 border-gray-300">${i}</li>`).join('')}</ul></div>`:''}</div>`;
+    if (data && data.summary && data.items) {
+      const quotes = data.quotes||[];
+      return `<div class="space-y-5"><p class="text-sm text-gray-700 leading-relaxed">${data.summary}</p>${quotes.length?`<blockquote class="text-sm italic text-gray-700 pl-4 border-l-2 border-blue-300 py-2 bg-blue-50 rounded-r">&ldquo;${quotes[0]}&rdquo;</blockquote>`:''}<div class="space-y-4">${data.items.map(item=>`<div><div class="text-sm font-semibold text-gray-900 mb-1">${item.title}</div><p class="text-sm text-gray-700 leading-relaxed">${item.detail}</p></div>`).join('')}</div>${quotes.length>1?`<div class="space-y-2">${quotes.slice(1).map(q=>`<blockquote class="text-sm italic text-gray-700 pl-4 border-l-2 border-gray-300 py-1.5 bg-gray-50 rounded-r">&ldquo;${q}&rdquo;</blockquote>`).join('')}</div>`:''}</div>`;
+    }
+    if (typeof data==='string') return `<p class="text-sm text-gray-700">${data}</p>`;
+    return '<p class="text-sm text-gray-500">No data available.</p>';
+  }
+
+  const MATRIX_SECTION_LABELS = {matrix:'Matrix',overview:'Summary',goals:'Goals',needs:'Needs',painPoints:'Pain Points',hiddenAgendas:'Hidden Agendas',keyQuotes:'Key Quotes',contradictions:'Contradictions',recommendations:'Recommendations'};
+
+  function renderFullInteractiveMatrix() {
+    const mainContent = (matrixSelectedId && matrixCurrentSection !== 'matrix')
+      ? `<div class="bg-white rounded-xl border border-gray-100 p-6 shadow-sm overflow-auto" style="max-height:65vh;"><h2 class="text-lg font-semibold text-gray-900 mb-1">${MATRIX_SECTION_LABELS[matrixCurrentSection]||matrixCurrentSection}</h2><p class="text-xs text-gray-500 mb-4">${matrixProfileById[matrixSelectedId]?.name} &middot; ${matrixProfileById[matrixSelectedId]?.role}</p>${renderMatrixProfileSection(matrixSelectedId, matrixCurrentSection)}</div>`
+      : renderMatrixSVGContent();
+    return `<div class="flex rounded-xl overflow-hidden" style="min-height:60vh;border:1px solid #e5e7eb;">
+      <div id="matrixControlPanel" class="w-72 flex-shrink-0 bg-white border-r border-gray-200 p-5 overflow-auto">${renderMatrixControlPanel(matrixSelectedId)}</div>
+      <div class="flex-1 p-4 overflow-auto bg-gray-50">${mainContent}</div>
+    </div>`;
+  }
+
+  function initInteractiveMatrix() {
+    buildMatrixData();
+    const firstId = Object.keys(matrixPositions)[0];
+    if (firstId) matrixSelectedId = firstId;
+    const slot = document.getElementById('interactive-matrix-slot');
+    if (slot) slot.innerHTML = renderFullInteractiveMatrix();
+  }
+
+  function matrixRerenderAll() {
+    const slot = document.getElementById('interactive-matrix-slot');
+    if (slot) slot.innerHTML = renderFullInteractiveMatrix();
+  }
+
+  function matrixUpdateSVGOnly() {
+    const svg = document.getElementById('interactiveMatrixSvg');
+    if (!svg) return;
+    const mob=window.innerWidth<768, bR=mob?4:2, sR=mob?5:2.5, tO=mob?7:4.5;
+    Object.entries(matrixPositions).forEach(([id, pos]) => {
+      const circle = svg.querySelector(`circle[data-matrix-id="${id}"]`);
+      if (!circle) return;
+      const x=pos.interest, y=100-pos.influence, isSel=matrixSelectedId===id;
+      circle.setAttribute('cx',x); circle.setAttribute('cy',y);
+      circle.setAttribute('fill',getAttitudeColor(pos.attitude));
+      circle.setAttribute('r',isSel?sR:bR);
+      circle.setAttribute('stroke',isSel?'#2563eb':'white');
+      circle.setAttribute('stroke-width',isSel?'1':'0.5');
+      isSel?circle.classList.add('selected'):circle.classList.remove('selected');
+      const text=circle.parentElement?.querySelector('text');
+      if(text){text.setAttribute('x',x);text.setAttribute('y',y-tO);}
+    });
+  }
+
+  function matrixUpdateControlLabels(id) {
+    const pos=matrixPositions[id]; if(!pos||matrixSelectedId!==id) return;
+    const panel=document.getElementById('matrixControlPanel'); if(!panel) return;
+    const labels=panel.querySelectorAll('.text-sm.font-medium.text-gray-900');
+    if(labels[0]) labels[0].textContent=getMatrixInfluenceLabel(pos.influence);
+    if(labels[1]) labels[1].textContent=getMatrixInterestLabel(pos.interest);
+    if(labels[2]) labels[2].textContent=getAttitudeLabel(pos.attitude);
+  }
+
+  function matrixUpdateControlSliders(id) {
+    const pos=matrixPositions[id]; if(!pos) return;
+    const panel=document.getElementById('matrixControlPanel'); if(!panel) return;
+    const sliders=panel.querySelectorAll('input[type="range"]');
+    if(sliders[0]) sliders[0].value=pos.influence;
+    if(sliders[1]) sliders[1].value=pos.interest;
+    if(sliders[2]) sliders[2].value=pos.attitude;
+  }
+
+  window.matrixSelectStakeholder = function(id) {
+    matrixSelectedId=id; matrixCurrentSection='matrix'; matrixRerenderAll();
+  };
+
+  window.matrixSetSection = function(key) {
+    matrixCurrentSection=key;
+    const panel=document.getElementById('matrixControlPanel');
+    if(panel&&matrixSelectedId) panel.innerHTML=renderMatrixControlPanel(matrixSelectedId);
+    const mainArea=document.querySelector('#interactive-matrix-slot .flex-1.p-4');
+    if(!mainArea) return;
+    mainArea.innerHTML=(matrixSelectedId&&key!=='matrix')
+      ?`<div class="bg-white rounded-xl border border-gray-100 p-6 shadow-sm overflow-auto" style="max-height:65vh;"><h2 class="text-lg font-semibold text-gray-900 mb-1">${MATRIX_SECTION_LABELS[key]||key}</h2><p class="text-xs text-gray-500 mb-4">${matrixProfileById[matrixSelectedId]?.name} &middot; ${matrixProfileById[matrixSelectedId]?.role}</p>${renderMatrixProfileSection(matrixSelectedId,key)}</div>`
+      :renderMatrixSVGContent();
+  };
+
+  window.matrixStartDragging = function(event, id) {
+    event.preventDefault(); event.stopPropagation();
+    matrixDraggedId=id; matrixSelectedId=id; matrixCurrentSection='matrix';
+    const svg=document.getElementById('interactiveMatrixSvg');
+    if(svg){const c=svg.querySelector(`circle[data-matrix-id="${id}"]`);if(c) c.classList.add('dragging');}
+    matrixUpdateSVGOnly();
+    const panel=document.getElementById('matrixControlPanel');
+    if(panel) panel.innerHTML=renderMatrixControlPanel(id);
+  };
+
+  window.matrixStopDragging = function() {
+    if(!matrixDraggedId) return;
+    const svg=document.getElementById('interactiveMatrixSvg');
+    if(svg){const c=svg.querySelector(`circle[data-matrix-id="${matrixDraggedId}"]`);if(c) c.classList.remove('dragging');}
+    matrixDraggedId=null;
+  };
+
+  window.matrixHandleDrag = function(event) {
+    if(!matrixDraggedId) return;
+    event.preventDefault(); event.stopPropagation();
+    const svg=document.getElementById('interactiveMatrixSvg'); if(!svg) return;
+    let cX, cY;
+    if(event.type.startsWith('touch')){if(!event.touches.length) return; cX=event.touches[0].clientX; cY=event.touches[0].clientY;}
+    else{cX=event.clientX; cY=event.clientY;}
+    const pt=svg.createSVGPoint(); pt.x=cX; pt.y=cY;
+    const sp=pt.matrixTransform(svg.getScreenCTM().inverse());
+    matrixPositions[matrixDraggedId].interest =Math.round(Math.max(0,Math.min(100,sp.x)));
+    matrixPositions[matrixDraggedId].influence=Math.round(Math.max(0,Math.min(100,100-sp.y)));
+    const circle=svg.querySelector(`circle[data-matrix-id="${matrixDraggedId}"]`);
+    if(circle){
+      const x=matrixPositions[matrixDraggedId].interest, y=100-matrixPositions[matrixDraggedId].influence;
+      circle.setAttribute('cx',x); circle.setAttribute('cy',y);
+      const text=circle.nextElementSibling;
+      if(text){const tO=window.innerWidth<768?7:4.5;text.setAttribute('x',x);text.setAttribute('y',y-tO);}
+    }
+    matrixUpdateControlSliders(matrixDraggedId);
+    matrixUpdateControlLabels(matrixDraggedId);
+  };
+
+  window.matrixUpdateSliderLive = function(id, field, value) {
+    matrixPositions[id][field]=parseFloat(value); matrixUpdateSVGOnly(); matrixUpdateControlLabels(id);
+  };
+  window.matrixUpdateSliderFinal = function(id, field, value) {
+    matrixPositions[id][field]=parseFloat(value); matrixUpdateControlLabels(id);
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if(!matrixSelectedId||!document.getElementById('interactiveMatrixSvg')) return;
+    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+    const navKeys=['matrix','overview','goals','needs','painPoints','hiddenAgendas','keyQuotes','contradictions','recommendations'];
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      e.preventDefault();
+      let idx=navKeys.indexOf(matrixCurrentSection); if(idx===-1) idx=0;
+      idx=e.key==='ArrowDown'?(idx+1)%navKeys.length:(idx-1+navKeys.length)%navKeys.length;
+      matrixSetSection(navKeys[idx]);
+    }
+  });
+
+  // ===== CHAT =====
+  const WORKER_URL_KEY = 'stakeholder_worker_url';
+  let chatMessages = [];
+  let chatIsStreaming = false;
+
+  function getWorkerUrl() { return localStorage.getItem(WORKER_URL_KEY) || ''; }
+
+  function saveWorkerUrl() {
+    const input = document.getElementById('worker-url-input');
+    const url = (input ? input.value : '').trim();
+    if (!url) return;
+    localStorage.setItem(WORKER_URL_KEY, url);
+    initChat();
+  }
+
+  function resetWorkerUrl() {
+    localStorage.removeItem(WORKER_URL_KEY);
+    chatMessages = [];
+    initChat();
+  }
+
+  function initChat() {
+    const url = getWorkerUrl();
+    const setupEl = document.getElementById('chat-setup');
+    const welcomeEl = document.getElementById('chat-welcome');
+    const messagesEl = document.getElementById('chat-messages-area');
+    const inputBar = document.getElementById('chat-input-bar');
+    if (!setupEl || !welcomeEl || !messagesEl || !inputBar) return;
+
+    if (!url) {
+      setupEl.classList.remove('hidden'); setupEl.style.display = '';
+      welcomeEl.classList.add('hidden'); welcomeEl.style.display = 'none';
+      messagesEl.classList.add('hidden'); messagesEl.style.display = 'none';
+      inputBar.classList.add('hidden'); inputBar.style.display = 'none';
+    } else if (chatMessages.length === 0) {
+      setupEl.classList.add('hidden'); setupEl.style.display = 'none';
+      welcomeEl.classList.remove('hidden'); welcomeEl.style.display = '';
+      messagesEl.classList.add('hidden'); messagesEl.style.display = 'none';
+      inputBar.classList.remove('hidden'); inputBar.style.display = '';
+    } else {
+      setupEl.classList.add('hidden'); setupEl.style.display = 'none';
+      welcomeEl.classList.add('hidden'); welcomeEl.style.display = 'none';
+      messagesEl.classList.remove('hidden'); messagesEl.style.display = '';
+      inputBar.classList.remove('hidden'); inputBar.style.display = '';
+      renderChatMessages();
+    }
+  }
+
+  function renderChatMessages() {
+    const el = document.getElementById('chat-messages-area');
+    if (!el) return;
+    el.innerHTML = chatMessages.map((m, i) => {
+      const isUser = m.role === 'user';
+      const isLastAssistant = !isUser && i === chatMessages.length - 1;
+      const isStreaming = isLastAssistant && chatIsStreaming;
+      if (isUser) {
+        return `<div class="flex justify-end"><div class="chat-bubble-user px-4 py-2.5 max-w-xs md:max-w-md text-sm leading-relaxed">${escapeHtml(m.content)}</div></div>`;
+      }
+      const content = m.content || '';
+      const isEmpty = !content && isStreaming;
+      return `<div class="flex justify-start"><div class="chat-bubble-${m.error?'error':'assistant'} px-4 py-2.5 max-w-xs md:max-w-lg text-sm leading-relaxed${isStreaming?' streaming-cursor':''}">${isEmpty ? '' : formatChatContent(content)}</div></div>`;
+    }).join('');
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatChatContent(str) {
+    // Basic markdown: bold, italic, newlines, bullet lists
+    return str
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g,'<em>$1</em>')
+      .replace(/^- (.+)$/gm,'<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/gs, '<ul class="list-disc list-inside space-y-0.5 my-1">$1</ul>')
+      .replace(/\n/g,'<br>');
+  }
+
+  function submitStarterQuestion(text) {
+    const input = document.getElementById('chat-input');
+    if (input) input.value = text;
+    sendChatMessage();
+  }
+
+  function handleChatKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  }
+
+  function autoResizeTextarea(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  function sendChatMessage() {
+    if (chatIsStreaming) return;
+    const input = document.getElementById('chat-input');
+    const text = (input ? input.value : '').trim();
+    if (!text) return;
+    if (input) { input.value = ''; input.style.height = 'auto'; }
+
+    chatMessages.push({ role: 'user', content: text });
+    chatMessages.push({ role: 'assistant', content: '' });
+    chatIsStreaming = true;
+
+    // Show messages pane
+    const welcomeEl = document.getElementById('chat-welcome');
+    const messagesEl = document.getElementById('chat-messages-area');
+    if (welcomeEl) { welcomeEl.classList.add('hidden'); welcomeEl.style.display = 'none'; }
+    if (messagesEl) { messagesEl.classList.remove('hidden'); messagesEl.style.display = ''; }
+
+    renderChatMessages();
+    updateSendBtn();
+    streamFromWorker();
+  }
+
+  function updateSendBtn() {
+    const btn = document.getElementById('chat-send-btn');
+    if (btn) btn.disabled = chatIsStreaming;
+  }
+
+  async function streamFromWorker() {
+    const url = getWorkerUrl();
+    // Send all messages except the trailing empty assistant placeholder
+    const messagesToSend = chatMessages.slice(0, -1);
+    const lastIdx = chatMessages.length - 1;
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: messagesToSend }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        chatMessages[lastIdx] = { role: 'assistant', content: `Error ${res.status}: ${err}`, error: true };
+        chatIsStreaming = false;
+        renderChatMessages();
+        updateSendBtn();
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep incomplete line
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const evt = JSON.parse(data);
+            if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+              chatMessages[lastIdx].content += evt.delta.text;
+              renderChatMessages();
+            }
+          } catch {}
+        }
+      }
+    } catch (err) {
+      chatMessages[lastIdx] = { role: 'assistant', content: `Connection error: ${err.message}`, error: true };
+    }
+
+    chatIsStreaming = false;
+    renderChatMessages();
+    updateSendBtn();
+  }
+
+  // ===== INIT =====
+  async function init() {
+    try {
+      const res = await fetch('./data.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      appData = await res.json();
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app-content').classList.remove('hidden');
+      document.getElementById('project-title-desktop').textContent = appData.metadata.projectName;
+      document.title = appData.metadata.projectName + ' — Stakeholder Intelligence';
+
+      renderMeetings();
+      renderGoals();
+      renderProject();
+      initInteractiveMatrix();
+      initChat();
+
+      switchTab('meetings');
+    } catch (e) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error-state').classList.remove('hidden');
+      console.error('Failed to load data.json:', e);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
