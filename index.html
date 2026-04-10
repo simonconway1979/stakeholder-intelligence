@@ -117,11 +117,11 @@
         <span id="project-title-desktop" class="font-semibold text-gray-900 text-sm">Stakeholder Intelligence</span>
       </div>
       <div class="flex gap-1">
-        <button onclick="switchTab('ask')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="ask">Ask</button>
-        <button onclick="switchTab('meetings')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="meetings">Meetings</button>
         <button onclick="switchTab('stakeholders')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="stakeholders">Stakeholders</button>
         <button onclick="switchTab('goals')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="goals">Goals</button>
+        <button onclick="switchTab('meetings')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="meetings">Meetings</button>
         <button onclick="switchTab('project')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="project">Project</button>
+        <button onclick="switchTab('ask')" class="desktop-tab px-4 py-2 text-sm font-medium rounded-lg transition-all" data-tab="ask">Ask</button>
       </div>
     </div>
   </div>
@@ -249,16 +249,6 @@
 
 <!-- Mobile bottom nav -->
 <div class="mobile-bottom-bar">
-  <button onclick="switchTab('ask')" data-tab="ask">
-    <span class="tab-indicator"></span>
-    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    Ask
-  </button>
-  <button onclick="switchTab('meetings')" data-tab="meetings">
-    <span class="tab-indicator"></span>
-    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-    Meetings
-  </button>
   <button onclick="switchTab('stakeholders')" data-tab="stakeholders">
     <span class="tab-indicator"></span>
     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg>
@@ -269,10 +259,20 @@
     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
     Goals
   </button>
+  <button onclick="switchTab('meetings')" data-tab="meetings">
+    <span class="tab-indicator"></span>
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+    Meetings
+  </button>
   <button onclick="switchTab('project')" data-tab="project">
     <span class="tab-indicator"></span>
     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
     Project
+  </button>
+  <button onclick="switchTab('ask')" data-tab="ask">
+    <span class="tab-indicator"></span>
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Ask
   </button>
 </div>
 
@@ -296,7 +296,7 @@
 
 <script>
   let appData = null;
-  let currentTab = 'meetings';
+  let currentTab = 'stakeholders';
   let openAccordions = new Set();
   let meetingFilters = new Set();
 
@@ -1238,7 +1238,7 @@
       initInteractiveMatrix();
       initChat();
 
-      switchTab('meetings');
+      switchTab('stakeholders');
     } catch (e) {
       document.getElementById('loading').style.display = 'none';
       document.getElementById('error-state').classList.remove('hidden');
